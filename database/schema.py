@@ -385,13 +385,18 @@ class WeatherForecast(Base):
     wind_speed_mph = Column(Float)
     wind_direction = Column(String(20))
     cloud_cover_percent = Column(Float)
+    zone_name = Column(String(50))  # NYISO zone name (e.g., 'WEST', 'N.Y.C.')
+    irradiance_w_m2 = Column(Float)  # Solar irradiance in W/m²
+    data_source = Column(String(20), default='NYISO')  # 'NYISO' or 'OpenMeteo'
     created_at = Column(DateTime, default=datetime.utcnow)
     
     __table_args__ = (
-        UniqueConstraint('timestamp', 'forecast_time', 'location', 'vintage', name='uq_weather_forecast'),
+        UniqueConstraint('timestamp', 'forecast_time', 'location', 'vintage', 'data_source', name='uq_weather_forecast'),
         Index('idx_weather_timestamp', 'timestamp'),
         Index('idx_weather_forecast_time', 'forecast_time'),
         Index('idx_weather_vintage', 'vintage'),
+        Index('idx_weather_zone', 'zone_name'),
+        Index('idx_weather_data_source', 'data_source'),
     )
 
 
