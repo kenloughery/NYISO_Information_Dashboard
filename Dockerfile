@@ -58,7 +58,17 @@ COPY static/ ./static/
 COPY --from=builder /app/frontend/dist ./frontend_dist_temp
 
 # Merge frontend dist into static directory (preserves existing static files)
-RUN cp -r ./frontend_dist_temp/* ./static/ && rm -rf ./frontend_dist_temp
+# Use verbose output to debug any issues
+RUN echo "Merging frontend build into static directory..." && \
+    ls -la ./frontend_dist_temp/ && \
+    cp -rv ./frontend_dist_temp/* ./static/ && \
+    echo "Verifying static directory contents..." && \
+    ls -la ./static/ && \
+    echo "Checking for index.html..." && \
+    test -f ./static/index.html && echo "✓ index.html found" || echo "✗ index.html NOT FOUND" && \
+    echo "Checking for assets directory..." && \
+    test -d ./static/assets && echo "✓ assets directory found" || echo "✗ assets directory NOT FOUND" && \
+    rm -rf ./frontend_dist_temp
 
 # Create data directory for SQLite database (persistent volume mount point)
 RUN mkdir -p /app/data

@@ -42,6 +42,28 @@ async def startup_event():
     logger.info(f"PORT environment variable: {os.getenv('PORT', 'not set')}")
     logger.info(f"HOST environment variable: {os.getenv('HOST', 'not set')}")
     logger.info(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'not set')[:50]}...")  # Truncate for security
+    
+    # Verify frontend files are available
+    static_dir = Path(__file__).parent.parent / "static"
+    frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+    
+    if static_dir.exists():
+        index_file = static_dir / "index.html"
+        assets_dir = static_dir / "assets"
+        logger.info(f"Frontend static directory: {static_dir}")
+        logger.info(f"  - index.html exists: {index_file.exists()}")
+        logger.info(f"  - assets directory exists: {assets_dir.exists()}")
+        if assets_dir.exists():
+            try:
+                asset_count = len(list(assets_dir.glob("*")))
+                logger.info(f"  - asset files count: {asset_count}")
+            except:
+                pass
+    elif frontend_dist.exists():
+        logger.info(f"Frontend dist directory found: {frontend_dist}")
+    else:
+        logger.warning("No frontend files found - frontend will not be served!")
+    
     logger.info("FastAPI app initialized successfully")
     logger.info("=" * 80)
 
@@ -2078,24 +2100,68 @@ async def health_check():
 # Serve static frontend files (for production deployment)
 # This allows the API to serve the React frontend
 # Check for static directory (production) or frontend/dist (development)
+import logging
+logger = logging.getLogger(__name__)
+
 static_dir = Path(__file__).parent.parent / "static"
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+
+# Log directory status for debugging
+logger.info("=" * 80)
+logger.info("Frontend File Serving Configuration")
+logger.info("=" * 80)
+logger.info(f"Static directory exists: {static_dir.exists()} at {static_dir}")
+logger.info(f"Frontend dist exists: {frontend_dist.exists()} at {frontend_dist}")
 
 # Determine which directory to use
 if static_dir.exists():
     # Production: static directory contains built frontend
     frontend_root = static_dir
+    logger.info(f"Using static directory: {frontend_root}")
+    
+    # Log contents for debugging
+    if static_dir.exists():
+        try:
+            contents = list(static_dir.iterdir())
+            logger.info(f"Static directory contents: {[str(c.name) for c in contents]}")
+        except Exception as e:
+            logger.warning(f"Could not list static directory contents: {e}")
 elif frontend_dist.exists():
     # Development: frontend/dist exists
     frontend_root = frontend_dist
+    logger.info(f"Using frontend/dist directory: {frontend_root}")
 else:
     frontend_root = None
+    logger.warning("No frontend directory found! Frontend will not be served.")
 
 if frontend_root:
+    # Check for index.html
+    index_file = frontend_root / "index.html"
+    logger.info(f"Index.html exists: {index_file.exists()} at {index_file}")
+    
     # Mount static assets (JS, CSS, images, etc.) from assets subdirectory
     assets_dir = frontend_root / "assets"
     if assets_dir.exists():
+        logger.info(f"Mounting assets directory: {assets_dir}")
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+        
+        # Log some asset files for verification
+        try:
+            asset_files = list(assets_dir.iterdir())[:5]  # First 5 files
+            logger.info(f"Sample asset files: {[str(f.name) for f in asset_files]}")
+        except Exception as e:
+            logger.warning(f"Could not list assets: {e}")
+    else:
+        logger.warning(f"Assets directory not found: {assets_dir}")
+    
+    # Also serve other static files (like nyiso_zones.geojson) from root of static
+    # But only if they're not in assets
+    try:
+        # Mount root static files (but exclude assets and index.html)
+        app.mount("/static", StaticFiles(directory=str(frontend_root)), name="static_files")
+        logger.info(f"Mounted static files from: {frontend_root}")
+    except Exception as e:
+        logger.warning(f"Could not mount static files: {e}")
     
     # Serve index.html for all non-API routes (SPA routing)
     # This catch-all route must be defined AFTER all API routes
@@ -2107,18 +2173,31 @@ if frontend_root:
             full_path.startswith("docs") or 
             full_path.startswith("redoc") or
             full_path.startswith("openapi.json") or
-            full_path.startswith("assets/")):
+            full_path.startswith("assets/") or
+            full_path.startswith("static/")):
             raise HTTPException(status_code=404, detail="Not found")
         
         # Serve index.html for SPA routing (React Router)
         index_file = frontend_root / "index.html"
         if index_file.exists():
-            return FileResponse(str(index_file))
+            return FileResponse(
+                str(index_file),
+                media_type="text/html",
+                headers={"Cache-Control": "no-cache"}
+            )
         else:
+            logger.error(f"Index.html not found at {index_file}")
             raise HTTPException(
-                status_code=404, 
+                status_code=500, 
                 detail="Frontend not built. Run 'npm run build' in frontend directory."
             )
+    
+    logger.info("Frontend serving configured successfully")
+else:
+    logger.error("Frontend root not found - frontend will not be served!")
+    logger.error("This is expected in development mode, but should not happen in production")
+
+logger.info("=" * 80)
 
 
 if __name__ == "__main__":
