@@ -2093,6 +2093,12 @@ async def get_nyiso_zones():
         )
 
 
+@app.get("/ping")
+async def ping():
+    """Simple ping endpoint to test if server is responding."""
+    return {"status": "ok", "message": "pong"}
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Railway/deployment monitoring."""
