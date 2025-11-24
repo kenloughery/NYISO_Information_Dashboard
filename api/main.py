@@ -48,17 +48,7 @@ async def startup_event():
     frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
     
     if static_dir.exists():
-        index_file = static_dir / "index.html"
-        assets_dir = static_dir / "assets"
         logger.info(f"Frontend static directory: {static_dir}")
-        logger.info(f"  - index.html exists: {index_file.exists()}")
-        logger.info(f"  - assets directory exists: {assets_dir.exists()}")
-        if assets_dir.exists():
-            try:
-                asset_count = len(list(assets_dir.glob("*")))
-                logger.info(f"  - asset files count: {asset_count}")
-            except:
-                pass
     elif frontend_dist.exists():
         logger.info(f"Frontend dist directory found: {frontend_dist}")
     else:
@@ -416,37 +406,37 @@ async def root():
         
         # Development: return API info (or fallback if frontend serving fails)
         return JSONResponse(content={
-            "message": "NYISO Data API",
-            "version": "1.0.0",
+        "message": "NYISO Data API",
+        "version": "1.0.0",
             "status": "running",
             "frontend_available": frontend_root is not None,
-            "endpoints": {
-                "zones": "/api/zones",
-                "interfaces": "/api/interfaces",
-                "realtime_lbmp": "/api/realtime-lbmp",
-                "dayahead_lbmp": "/api/dayahead-lbmp",
-                "timeweighted_lbmp": "/api/timeweighted-lbmp",
-                "ancillary_services": "/api/ancillary-services",
-                "realtime_load": "/api/realtime-load",
-                "load_forecast": "/api/load-forecast",
-                "interface_flows": "/api/interface-flows",
-                "interregional_flows": "/api/interregional-flows",
+        "endpoints": {
+            "zones": "/api/zones",
+            "interfaces": "/api/interfaces",
+            "realtime_lbmp": "/api/realtime-lbmp",
+            "dayahead_lbmp": "/api/dayahead-lbmp",
+            "timeweighted_lbmp": "/api/timeweighted-lbmp",
+            "ancillary_services": "/api/ancillary-services",
+            "realtime_load": "/api/realtime-load",
+            "load_forecast": "/api/load-forecast",
+            "interface_flows": "/api/interface-flows",
+            "interregional_flows": "/api/interregional-flows",
                 "analytics": "/api/analytics/summary",
                 "weather_current": "/api/weather-current",
-                "market_advisories": "/api/market-advisories",
-                "constraints": "/api/constraints",
-                "external_rto_prices": "/api/external-rto-prices",
-                "atc_ttc": "/api/atc-ttc",
-                "outages": "/api/outages",
-                "weather_forecast": "/api/weather-forecast",
-                "fuel_mix": "/api/fuel-mix",
-                "rt_da_spreads": "/api/rt-da-spreads",
-                "zone_spreads": "/api/zone-spreads",
-                "load_forecast_errors": "/api/load-forecast-errors",
-                "reserve_margins": "/api/reserve-margins",
-                "price_volatility": "/api/price-volatility",
-                "correlations": "/api/correlations",
-                "trading_signals": "/api/trading-signals",
+            "market_advisories": "/api/market-advisories",
+            "constraints": "/api/constraints",
+            "external_rto_prices": "/api/external-rto-prices",
+            "atc_ttc": "/api/atc-ttc",
+            "outages": "/api/outages",
+            "weather_forecast": "/api/weather-forecast",
+            "fuel_mix": "/api/fuel-mix",
+            "rt_da_spreads": "/api/rt-da-spreads",
+            "zone_spreads": "/api/zone-spreads",
+            "load_forecast_errors": "/api/load-forecast-errors",
+            "reserve_margins": "/api/reserve-margins",
+            "price_volatility": "/api/price-volatility",
+            "correlations": "/api/correlations",
+            "trading_signals": "/api/trading-signals",
                 "stats": "/api/stats",
                 "debug_db_stats": "/api/debug/db-stats"
             }
@@ -1374,61 +1364,77 @@ async def get_current_weather(
     db = next(get_db())
     
     try:
-        # Get most recent actual weather data
+        # Build base filter for Actual vintage
+        base_filter = WeatherForecast.vintage == 'Actual'
+        
+        # If data_source is specified, filter by it from the start
+        # This ensures we find the latest data for that specific source
+        if data_source:
+            base_filter = and_(base_filter, WeatherForecast.data_source == data_source)
+        
+        # Get most recent actual weather data for the specified data source
         # Use forecast_time (Vintage Date) to find the most recently updated data
-        latest_vintage_date = db.query(func.max(WeatherForecast.forecast_time)).filter(
-            WeatherForecast.vintage == 'Actual'
-        ).scalar()
+        latest_vintage_date_query = db.query(func.max(WeatherForecast.forecast_time)).filter(base_filter)
+        latest_vintage_date = latest_vintage_date_query.scalar()
         
         if not latest_vintage_date:
             return []
         
-        # Get the most recent timestamp (Forecast Date) for this vintage date
-        latest_timestamp = db.query(func.max(WeatherForecast.timestamp)).filter(
-            WeatherForecast.vintage == 'Actual',
+        # Get the most recent timestamp (Forecast Date) for this vintage date and data source
+        latest_timestamp_query = db.query(func.max(WeatherForecast.timestamp)).filter(
+            base_filter,
             WeatherForecast.forecast_time == latest_vintage_date
-        ).scalar()
+        )
+        latest_timestamp = latest_timestamp_query.scalar()
         
         if not latest_timestamp:
             return []
         
         # Get one record per location for the latest data
         # Use a subquery to get the most recent record per location
-        subquery = db.query(
-            WeatherForecast.location,
-            func.max(WeatherForecast.forecast_time).label('max_forecast_time')
-        ).filter(
+        subquery_filter = and_(
             WeatherForecast.vintage == 'Actual',
             WeatherForecast.timestamp == latest_timestamp,
             WeatherForecast.forecast_time == latest_vintage_date
         )
         
+        # Apply data_source filter to subquery if specified
+        if data_source:
+            subquery_filter = and_(subquery_filter, WeatherForecast.data_source == data_source)
+        
+        subquery = db.query(
+            WeatherForecast.location,
+            func.max(WeatherForecast.forecast_time).label('max_forecast_time')
+        ).filter(subquery_filter)
+        
         if location:
             subquery = subquery.filter(WeatherForecast.location == location)
         if zone_name:
             subquery = subquery.filter(WeatherForecast.zone_name == zone_name)
-        if data_source:
-            subquery = subquery.filter(WeatherForecast.data_source == data_source)
         
         subquery = subquery.group_by(WeatherForecast.location).subquery()
         
         # Join to get full records
+        join_conditions = and_(
+            WeatherForecast.location == subquery.c.location,
+            WeatherForecast.forecast_time == subquery.c.max_forecast_time,
+            WeatherForecast.vintage == 'Actual',
+            WeatherForecast.timestamp == latest_timestamp
+        )
+        
+        # Apply data_source filter to join conditions if specified
+        if data_source:
+            join_conditions = and_(join_conditions, WeatherForecast.data_source == data_source)
+        
         query = db.query(WeatherForecast).join(
             subquery,
-            and_(
-                WeatherForecast.location == subquery.c.location,
-                WeatherForecast.forecast_time == subquery.c.max_forecast_time,
-                WeatherForecast.vintage == 'Actual',
-                WeatherForecast.timestamp == latest_timestamp
-            )
+            join_conditions
         )
         
         if location:
             query = query.filter(WeatherForecast.location == location)
         if zone_name:
             query = query.filter(WeatherForecast.zone_name == zone_name)
-        if data_source:
-            query = query.filter(WeatherForecast.data_source == data_source)
         
         query = query.order_by(WeatherForecast.location)
         
@@ -2116,10 +2122,10 @@ async def health_check():
         from database.schema import get_session
         db = get_session()
         try:
-            # Simple query to test database connection
-            db.query(Zone).limit(1).all()
+        # Simple query to test database connection
+        db.query(Zone).limit(1).all()
             db.close()
-            return {"status": "healthy", "database": "connected"}
+        return {"status": "healthy", "database": "connected"}
         except Exception as db_error:
             db.close()
             return {
@@ -2190,29 +2196,13 @@ static_dir = Path(__file__).parent.parent / "static"
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
 
 # Log directory status for debugging
-logger.info("=" * 80)
-logger.info("Frontend File Serving Configuration")
-logger.info("=" * 80)
-logger.info(f"Static directory exists: {static_dir.exists()} at {static_dir}")
-logger.info(f"Frontend dist exists: {frontend_dist.exists()} at {frontend_dist}")
-
 # Determine which directory to use
 if static_dir.exists():
     # Production: static directory contains built frontend
     frontend_root = static_dir
-    logger.info(f"Using static directory: {frontend_root}")
-    
-    # Log contents for debugging
-    if static_dir.exists():
-        try:
-            contents = list(static_dir.iterdir())
-            logger.info(f"Static directory contents: {[str(c.name) for c in contents]}")
-        except Exception as e:
-            logger.warning(f"Could not list static directory contents: {e}")
 elif frontend_dist.exists():
     # Development: frontend/dist exists
     frontend_root = frontend_dist
-    logger.info(f"Using frontend/dist directory: {frontend_root}")
 else:
     frontend_root = None
     logger.warning("No frontend directory found! Frontend will not be served.")
@@ -2220,20 +2210,11 @@ else:
 if frontend_root:
     # Check for index.html
     index_file = frontend_root / "index.html"
-    logger.info(f"Index.html exists: {index_file.exists()} at {index_file}")
     
     # Mount static assets (JS, CSS, images, etc.) from assets subdirectory
     assets_dir = frontend_root / "assets"
     if assets_dir.exists():
-        logger.info(f"Mounting assets directory: {assets_dir}")
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
-        
-        # Log some asset files for verification
-        try:
-            asset_files = list(assets_dir.iterdir())[:5]  # First 5 files
-            logger.info(f"Sample asset files: {[str(f.name) for f in asset_files]}")
-        except Exception as e:
-            logger.warning(f"Could not list assets: {e}")
     else:
         logger.warning(f"Assets directory not found: {assets_dir}")
     
@@ -2242,7 +2223,6 @@ if frontend_root:
     try:
         # Mount root static files (but exclude assets and index.html)
         app.mount("/static", StaticFiles(directory=str(frontend_root)), name="static_files")
-        logger.info(f"Mounted static files from: {frontend_root}")
     except Exception as e:
         logger.warning(f"Could not mount static files: {e}")
     
@@ -2301,10 +2281,7 @@ if frontend_root:
     
     logger.info("Frontend serving configured successfully")
 else:
-    logger.error("Frontend root not found - frontend will not be served!")
-    logger.error("This is expected in development mode, but should not happen in production")
-
-logger.info("=" * 80)
+    logger.warning("Frontend root not found - frontend will not be served!")
 
 
 if __name__ == "__main__":

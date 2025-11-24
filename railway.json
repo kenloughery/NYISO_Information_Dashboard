@@ -10,7 +10,8 @@
     "restartPolicyMaxRetries": 10,
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60
-  }
+  },
+  "_comment": "Required environment variables (set in Railway dashboard → Variables): OPENMETEO_API_KEY=MZHzyrTuNWt9Bsh5"
 }
 
 

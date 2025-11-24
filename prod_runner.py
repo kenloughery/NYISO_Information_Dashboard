@@ -40,11 +40,52 @@ def run_scheduler():
         logger.exception(f"Error in scheduler thread: {e}")
 
 
+def validate_environment():
+    """Validate required environment variables and log warnings if missing."""
+    import os
+    warnings = []
+    errors = []
+    
+    # Check for Open Meteo API key (required for weather data)
+    openmeteo_key = os.getenv('OPENMETEO_API_KEY')
+    if not openmeteo_key:
+        warnings.append(
+            "⚠️  OPENMETEO_API_KEY not set - Open Meteo weather data will not be collected.\n"
+            "   To fix: Set OPENMETEO_API_KEY in Railway dashboard → Variables\n"
+            "   API Key: MZHzyrTuNWt9Bsh5"
+        )
+    else:
+        logger.info(f"✅ OPENMETEO_API_KEY is set (length: {len(openmeteo_key)})")
+    
+    # Log warnings
+    if warnings:
+        logger.warning("=" * 80)
+        logger.warning("ENVIRONMENT VARIABLE WARNINGS:")
+        logger.warning("=" * 80)
+        for warning in warnings:
+            logger.warning(warning)
+        logger.warning("=" * 80)
+    
+    # Log errors (currently none, but structure for future)
+    if errors:
+        logger.error("=" * 80)
+        logger.error("ENVIRONMENT VARIABLE ERRORS:")
+        logger.error("=" * 80)
+        for error in errors:
+            logger.error(error)
+        logger.error("=" * 80)
+    
+    return len(errors) == 0
+
+
 def main():
     """Main entry point - starts scheduler and FastAPI app."""
     logger.info("=" * 80)
     logger.info("Starting NYISO Dashboard (Production Mode)")
     logger.info("=" * 80)
+    
+    # Validate environment variables
+    validate_environment()
     
     # Database URL will be handled by get_database_url() in schema.py
     # It will try multiple paths and use Railway's DATABASE_URL if set

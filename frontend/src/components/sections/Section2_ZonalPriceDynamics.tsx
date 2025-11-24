@@ -69,18 +69,6 @@ export const Section2_ZonalPriceDynamics = () => {
   const { data: rtdaSpreadsData, isLoading: rtdaSpreadsLoading } = useRTDASpreads({ limit: 100 });
   const { data: zoneBoundaries, isLoading: boundariesLoading, error: boundariesError } = useZoneBoundaries();
   
-  // Debug: Log zone boundaries when loaded
-  useEffect(() => {
-    if (zoneBoundaries && zoneBoundaries.features) {
-      console.log('[Zone Boundaries] Loaded:', zoneBoundaries.features.length, 'zones');
-      zoneBoundaries.features.forEach((feat: any, idx: number) => {
-        const coords = feat.geometry?.coordinates?.[0];
-        if (coords) {
-          console.log(`[Zone ${idx + 1}] ${feat.properties?.zone_name}: ${coords.length} points`);
-        }
-      });
-    }
-  }, [zoneBoundaries]);
 
   // Get latest prices by zone and calculate price changes
   const zonePrices = useMemo(() => {
@@ -261,32 +249,8 @@ export const Section2_ZonalPriceDynamics = () => {
   // No transformation needed as the file is generated correctly
   const transformedGeoJSON = useMemo(() => {
     if (!zoneBoundaries || !zoneBoundaries.features) {
-      console.log('[GeoJSON] No zone boundaries data available');
       return zoneBoundaries;
     }
-    
-    // Verify we have detailed polygons (not simple rectangles)
-    console.log('[GeoJSON] Loaded', zoneBoundaries.features.length, 'zones');
-    zoneBoundaries.features.forEach((feat: any) => {
-      const zoneName = feat.properties?.zone_name;
-      const geomType = feat.geometry?.type;
-      const coords = feat.geometry?.coordinates;
-      
-      if (geomType === 'Polygon') {
-        const ring = coords[0];
-        const pointCount = ring.length;
-        console.log(`[GeoJSON] ${zoneName}: ${geomType}, ${pointCount} points`);
-        if (pointCount < 10) {
-          console.warn(`[GeoJSON] ⚠ ${zoneName} has only ${pointCount} points - might be simplified`);
-        }
-      } else if (geomType === 'MultiPolygon') {
-        const totalPoints = coords.reduce((sum: number, poly: any[][]) => sum + poly[0].length, 0);
-        const polyCount = coords.length;
-        console.log(`[GeoJSON] ${zoneName}: ${geomType}, ${polyCount} polygons, ${totalPoints} total points`);
-      } else {
-        console.warn(`[GeoJSON] ⚠ ${zoneName}: Unexpected geometry type ${geomType}`);
-      }
-    });
     
     // Return the data as-is - coordinates are already in [lon, lat] format
     return zoneBoundaries;

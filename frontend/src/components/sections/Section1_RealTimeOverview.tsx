@@ -99,11 +99,6 @@ export const Section1_RealTimeOverview = ({ lastUpdated }: Section1_RealTimeOver
     const latestTimestamp = interregionalFlows[0]?.timestamp;
     const latest = interregionalFlows.filter(d => d.timestamp === latestTimestamp);
     
-    // Debug: Check what regions we have in the data
-    const uniqueRegions = [...new Set(latest.map(f => f.region))];
-    console.log('Available regions in data:', uniqueRegions);
-    console.log('Latest flows sample:', latest.slice(0, 3));
-    
     // Aggregate flows by region (sum all connection points for each region)
     const regionAggregates: { [key: string]: { flow: number; positiveLimit: number; negativeLimit: number } } = {};
     
@@ -124,9 +119,6 @@ export const Section1_RealTimeOverview = ({ lastUpdated }: Section1_RealTimeOver
       regionAggregates[region].negativeLimit += Math.abs(negLimit);
     });
     
-    // Debug logging
-    console.log('Region Aggregates:', regionAggregates);
-    
     // Calculate utilization for each region - Always show all 4 critical regions
     return critical.map(name => {
       const aggregate = regionAggregates[name];
@@ -134,7 +126,6 @@ export const Section1_RealTimeOverview = ({ lastUpdated }: Section1_RealTimeOver
       
       // If no data for this region, show with 0 values
       if (!aggregate) {
-        console.log(`Interface ${name}: No aggregate data found`);
         return {
           name: displayName,
           flow: 0,
@@ -159,14 +150,6 @@ export const Section1_RealTimeOverview = ({ lastUpdated }: Section1_RealTimeOver
         utilization: Math.min(utilization, 100),
         hasData: aggregate.positiveLimit > 0 || aggregate.negativeLimit > 0 || flow > 0, // Has data if any limit or flow exists
       };
-      
-      // Debug logging
-      console.log(`Interface ${name}:`, {
-        ...result,
-        rawAggregate: aggregate,
-        isImport,
-        calculatedLimit: limit,
-      });
       
       return result;
     });
@@ -344,11 +327,6 @@ export const Section1_RealTimeOverview = ({ lastUpdated }: Section1_RealTimeOver
                 <LoadingSkeleton type="text" lines={4} className="h-24" />
               ) : (
                 criticalInterfaces.map((iface, idx) => {
-                  // Debug: Log each interface being rendered
-                  if (idx === 0) {
-                    console.log('Rendering interfaces:', criticalInterfaces);
-                  }
-                  
                   return (
                     <div key={idx} className="space-y-1">
                       <div className="flex items-center justify-between">
