@@ -121,18 +121,32 @@ def main():
         logger.info("Starting uvicorn server...")
         logger.info(f"Server will listen on {host}:{port}")
         
-        # Use uvicorn.run with optimized settings for Railway
-        # Set timeout to prevent hanging requests
+        # Use uvicorn.run with minimal settings for Railway
+        # Some parameters might not be valid for uvicorn.run(), so we use only basic ones
+        logger.info("=" * 80)
+        logger.info("Starting Uvicorn Server")
+        logger.info(f"Host: {host}, Port: {port}")
+        logger.info("=" * 80)
+        
+        # Verify port is actually available
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind((host, port))
+            sock.close()
+            logger.info(f"Port {port} is available")
+        except OSError as e:
+            logger.error(f"Port {port} is not available: {e}")
+            logger.error("This will cause connection refused errors!")
+            raise
+        
+        # Start uvicorn - use only well-known parameters
         uvicorn.run(
             app,
             host=host,
             port=port,
             log_level="info",
-            access_log=False,  # Railway handles access logs
-            timeout_keep_alive=5,  # Keep-alive timeout (seconds)
-            timeout_graceful_shutdown=10,  # Graceful shutdown timeout
-            limit_concurrency=100,  # Limit concurrent connections
-            limit_max_requests=1000,  # Restart worker after N requests (prevents memory leaks)
+            access_log=False  # Railway handles access logs
         )
     except ImportError as e:
         logger.error(f"Import error: {e}")
