@@ -388,6 +388,9 @@ def get_db():
 @app.get("/")
 async def root():
     """API root endpoint or frontend index (in production)."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         # Check if frontend is available (production mode)
         static_dir = Path(__file__).parent.parent / "static"
