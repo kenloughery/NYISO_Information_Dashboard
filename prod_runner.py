@@ -109,45 +109,43 @@ def main():
     logger.info(f"Starting FastAPI server on {host}:{port}")
     logger.info(f"PORT environment variable: {os.getenv('PORT', 'not set')}")
     logger.info(f"HOST environment variable: {os.getenv('HOST', 'not set')}")
+    logger.info(f"Python version: {sys.version}")
+    logger.info(f"Working directory: {os.getcwd()}")
     
     # Import and run uvicorn
     # Wrap in try-except to catch any import errors
     try:
         logger.info("Importing FastAPI app...")
         import uvicorn
-        from api.main import app
+        logger.info(f"Uvicorn version: {uvicorn.__version__}")
         
+        from api.main import app
         logger.info("FastAPI app imported successfully")
+        
         logger.info("Starting uvicorn server...")
         logger.info(f"Server will listen on {host}:{port}")
+        logger.info("If you see 'Uvicorn running' below, the server started successfully")
         
         # Use uvicorn.run with minimal settings for Railway
-        # Some parameters might not be valid for uvicorn.run(), so we use only basic ones
         logger.info("=" * 80)
         logger.info("Starting Uvicorn Server")
         logger.info(f"Host: {host}, Port: {port}")
         logger.info("=" * 80)
         
-        # Verify port is actually available
-        import socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.bind((host, port))
-            sock.close()
-            logger.info(f"Port {port} is available")
-        except OSError as e:
-            logger.error(f"Port {port} is not available: {e}")
-            logger.error("This will cause connection refused errors!")
-            raise
-        
         # Start uvicorn - use only well-known parameters
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            log_level="info",
-            access_log=False  # Railway handles access logs
-        )
+        # Note: uvicorn.run() is blocking, so this will run until the server stops
+        logger.info("Calling uvicorn.run() - this will block until server stops")
+        try:
+            uvicorn.run(
+                app,
+                host=host,
+                port=port,
+                log_level="info",
+                access_log=False  # Railway handles access logs
+            )
+        except Exception as uvicorn_error:
+            logger.exception(f"Uvicorn crashed: {uvicorn_error}")
+            raise
     except ImportError as e:
         logger.error(f"Import error: {e}")
         logger.error("Failed to import required modules. Check dependencies.")
