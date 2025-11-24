@@ -10,6 +10,7 @@ declare module 'react-sparklines' {
     max?: number;
     limit?: number;
     style?: React.CSSProperties;
+    children?: React.ReactNode;
   }
 
   export interface SparklinesLineProps {

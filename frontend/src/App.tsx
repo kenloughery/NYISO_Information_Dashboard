@@ -47,9 +47,8 @@ function App() {
     if (!hasTimezone) {
       // Timestamp is naive but represents Eastern Time
       // Parse components and format directly as ET (no conversion needed)
-      const [datePart, timePart] = dateStr.split('T');
+      const [datePart] = dateStr.split('T');
       const [, month] = datePart.split('-').map(Number);
-      const timeComponents = (timePart || '00:00:00').split(':').map(Number);
       
       // Create a date object by appending ET timezone offset
       // We need to determine if DST is in effect
