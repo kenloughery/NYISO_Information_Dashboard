@@ -473,14 +473,35 @@ def get_database_url():
     """Get database URL from environment or use SQLite default."""
     db_url = os.getenv('DATABASE_URL')
     if db_url:
+        # Railway provides DATABASE_URL - use it directly
+        # If it's PostgreSQL, it's already in the right format
+        # If it's SQLite, it might need adjustment
+        if db_url.startswith('postgresql://') or db_url.startswith('postgres://'):
+            return db_url
+        # Handle Railway's SQLite URL format if needed
         return db_url
-    # Default to SQLite in data directory
-    data_dir = Path('/app/data')
-    data_dir.mkdir(parents=True, exist_ok=True)
-    db_path = data_dir / 'nyiso_data.db'
-    db_path_str = str(db_path.absolute())
-    # SQLAlchemy handles absolute paths with 3 slashes too
-    return f'sqlite:///{db_path_str}'
+    
+    # Default to SQLite in current directory (works better for Railway)
+    # Try multiple locations in order of preference
+    possible_dirs = [
+        Path.cwd() / 'data',  # Current working directory
+        Path('/app/data'),     # Railway/Docker convention
+        Path('/tmp'),          # Temporary directory (ephemeral)
+        Path.cwd(),            # Current directory as fallback
+    ]
+    
+    for data_dir in possible_dirs:
+        try:
+            data_dir.mkdir(parents=True, exist_ok=True)
+            db_path = data_dir / 'nyiso_data.db'
+            db_path_str = str(db_path.absolute())
+            return f'sqlite:///{db_path_str}'
+        except (OSError, PermissionError):
+            continue
+    
+    # Last resort: use current directory
+    db_path = Path.cwd() / 'nyiso_data.db'
+    return f'sqlite:///{str(db_path.absolute())}'
 
 
 def create_engine_instance():

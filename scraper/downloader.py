@@ -81,8 +81,15 @@ class NYISODownloader:
                     
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 404:
-                    logger.debug(f"404 Not Found: {url}")
-                    return None  # File doesn't exist, not a retryable error
+                    # For 404 errors, retry if we have attempts left (might be timing issue)
+                    # Some NYISO data sources may not be immediately available
+                    if attempt < self.max_retries - 1:
+                        logger.warning(f"404 Not Found: {url} (attempt {attempt + 1}/{self.max_retries}) - retrying...")
+                        time.sleep(self.retry_delay * (attempt + 1))
+                        continue  # Retry
+                    else:
+                        logger.debug(f"404 Not Found: {url} (final attempt) - file may not exist yet")
+                        return None  # File doesn't exist after all retries
                 else:
                     logger.warning(f"HTTP {e.response.status_code} for {url} (attempt {attempt + 1})")
                     if attempt < self.max_retries - 1:
