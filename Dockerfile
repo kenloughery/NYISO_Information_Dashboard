@@ -45,8 +45,10 @@ COPY database/ ./database/
 COPY config/ ./config/
 COPY scripts/ ./scripts/
 
-# Copy configuration files needed by URLConfigLoader
-COPY URL_Instructions.txt URL_Lookup.txt Missing_URL_Patterns.txt ./
+# Copy configuration files needed by URLConfigLoader (must be in root for config loader)
+COPY URL_Instructions.txt ./URL_Instructions.txt
+COPY URL_Lookup.txt ./URL_Lookup.txt
+COPY Missing_URL_Patterns.txt ./Missing_URL_Patterns.txt
 
 # Create static directory and copy existing static files (e.g., nyiso_zones.geojson)
 RUN mkdir -p ./static
