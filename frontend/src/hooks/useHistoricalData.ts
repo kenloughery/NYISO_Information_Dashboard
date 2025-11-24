@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import * as api from '@/services/api';
-import type { DateRangeParams, ZoneFilterParams } from '@/types/api';
+import type { DateRangeParams, ZoneFilterParams, WeatherForecastParams } from '@/types/api';
 
 // Day-ahead LBMP
 export const useDayAheadLBMP = (params?: ZoneFilterParams) => {
@@ -119,7 +119,7 @@ export const useOutages = (params?: DateRangeParams & {
 };
 
 // Weather Forecast
-export const useWeatherForecast = (params?: DateRangeParams) => {
+export const useWeatherForecast = (params?: WeatherForecastParams) => {
   return useQuery({
     queryKey: ['weather-forecast', params],
     queryFn: () => api.fetchWeatherForecast(params),
@@ -127,10 +127,14 @@ export const useWeatherForecast = (params?: DateRangeParams) => {
 };
 
 // Current Weather (most recent actual weather per station)
-export const useCurrentWeather = (location?: string) => {
+export const useCurrentWeather = (params?: {
+  location?: string;
+  zone_name?: string;
+  data_source?: 'NYISO' | 'OpenMeteo';
+}) => {
   return useQuery({
-    queryKey: ['weather-current', location],
-    queryFn: () => api.fetchCurrentWeather(location),
+    queryKey: ['weather-current', params],
+    queryFn: () => api.fetchCurrentWeather(params),
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 };

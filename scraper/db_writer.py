@@ -462,12 +462,16 @@ class DatabaseWriter:
         updated = 0
         
         for record in records:
+            # Unique constraint includes: timestamp, forecast_time, location, vintage, data_source
+            data_source = record.get('data_source', 'NYISO')  # Default to NYISO for backward compatibility
+            
             existing = self.session.query(WeatherForecast).filter(
                 and_(
                     WeatherForecast.timestamp == record['timestamp'],
                     WeatherForecast.forecast_time == record['forecast_time'],
                     WeatherForecast.location == record.get('location', ''),
-                    WeatherForecast.vintage == record.get('vintage')
+                    WeatherForecast.vintage == record.get('vintage'),
+                    WeatherForecast.data_source == data_source
                 )
             ).first()
             
@@ -477,6 +481,13 @@ class DatabaseWriter:
                 existing.wind_speed_mph = record.get('wind_speed_mph')
                 existing.wind_direction = record.get('wind_direction')
                 existing.cloud_cover_percent = record.get('cloud_cover_percent')
+                # Update new fields if provided
+                if 'zone_name' in record:
+                    existing.zone_name = record.get('zone_name')
+                if 'irradiance_w_m2' in record:
+                    existing.irradiance_w_m2 = record.get('irradiance_w_m2')
+                if 'data_source' in record:
+                    existing.data_source = record.get('data_source')
                 updated += 1
             else:
                 new_record = WeatherForecast(
@@ -488,7 +499,10 @@ class DatabaseWriter:
                     humidity_percent=record.get('humidity_percent'),
                     wind_speed_mph=record.get('wind_speed_mph'),
                     wind_direction=record.get('wind_direction'),
-                    cloud_cover_percent=record.get('cloud_cover_percent')
+                    cloud_cover_percent=record.get('cloud_cover_percent'),
+                    zone_name=record.get('zone_name'),
+                    irradiance_w_m2=record.get('irradiance_w_m2'),
+                    data_source=data_source
                 )
                 self.session.add(new_record)
                 inserted += 1

@@ -106,13 +106,21 @@ def main():
         
     except Exception as e:
         logger.exception(f"Failed to initialize database: {e}")
+        logger.warning("Database initialization failed, but continuing...")
+        logger.warning("The API may not work correctly until database is initialized")
         # Don't raise - let the app start and scheduler will retry
+        # This allows the health check endpoint to still respond
     
     # Start scheduler in background daemon thread
     # The scheduler will use the same database connection, so it should work now
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
-    logger.info("Scheduler thread started (daemon mode)")
+    # Don't let scheduler failures prevent the API from starting
+    try:
+        scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+        scheduler_thread.start()
+        logger.info("Scheduler thread started (daemon mode)")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler thread: {e}")
+        logger.warning("Continuing without scheduler - API will still work")
     
     # Get port from environment (Railway sets PORT env var)
     # Railway provides PORT as a string, ensure it's converted to int
@@ -127,17 +135,30 @@ def main():
     
     logger.info(f"Starting FastAPI server on {host}:{port}")
     logger.info(f"PORT environment variable: {os.getenv('PORT', 'not set')}")
+    logger.info(f"HOST environment variable: {os.getenv('HOST', 'not set')}")
     
     # Import and run uvicorn
-    import uvicorn
-    from api.main import app
-    
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level="info"
-    )
+    # Wrap in try-except to catch any import errors
+    try:
+        import uvicorn
+        from api.main import app
+        
+        logger.info("FastAPI app imported successfully")
+        logger.info("Starting uvicorn server...")
+        
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            log_level="info"
+        )
+    except ImportError as e:
+        logger.error(f"Import error: {e}")
+        logger.error("Failed to import required modules. Check dependencies.")
+        sys.exit(1)
+    except Exception as e:
+        logger.exception(f"Fatal error starting server: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

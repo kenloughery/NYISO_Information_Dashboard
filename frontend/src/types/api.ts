@@ -138,7 +138,10 @@ export interface WeatherForecast {
   wind_speed?: number;
   wind_direction?: string;
   cloud_cover_percent?: number;
-  forecast_horizon?: number;
+  zone_name?: string; // NYISO zone name (e.g., "WEST", "N.Y.C.")
+  irradiance_w_m2?: number | null; // Solar irradiance in W/m² (Open Meteo only)
+  data_source?: string; // "NYISO" or "OpenMeteo"
+  forecast_horizon?: number | null;
 }
 
 export interface FuelMix {
@@ -228,6 +231,13 @@ export interface DateRangeParams {
   start_date?: string;
   end_date?: string;
   limit?: number;
+}
+
+export interface WeatherForecastParams extends DateRangeParams {
+  location?: string;
+  vintage?: 'Actual' | 'Forecast';
+  zone_name?: string;
+  data_source?: 'NYISO' | 'OpenMeteo';
 }
 
 export interface ZoneFilterParams extends DateRangeParams {

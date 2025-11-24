@@ -25,8 +25,10 @@ class NYISOCSVParser:
     DATE_FORMATS = [
         '%m/%d/%Y %H:%M:%S',
         '%m/%d/%Y %H:%M',
+        '%m/%d/%Y',  # Date only (for weather data)
         '%Y-%m-%d %H:%M:%S',
         '%Y-%m-%d %H:%M',
+        '%Y-%m-%d',  # Date only
     ]
     
     def __init__(self):
@@ -81,6 +83,25 @@ class NYISOCSVParser:
         main_timestamp_col = None
         for col in timestamp_cols:
             if col in df.columns:
+                # Skip 'Vintage Date' - it will be handled separately for weather data
+                if col == 'Vintage Date':
+                    # Parse Vintage Date but don't rename it
+                    parsed = None
+                    for fmt in self.DATE_FORMATS:
+                        try:
+                            parsed = pd.to_datetime(df[col], format=fmt, errors='coerce')
+                            if parsed.notna().sum() > 0:
+                                break
+                        except:
+                            continue
+                    
+                    # Fallback to pandas auto-detection
+                    if parsed is None or parsed.isna().all():
+                        parsed = pd.to_datetime(df[col], errors='coerce')
+                    
+                    df[col] = parsed
+                    continue
+                
                 # Try different date formats
                 parsed = None
                 for fmt in self.DATE_FORMATS:
@@ -97,9 +118,12 @@ class NYISOCSVParser:
                 
                 df[col] = parsed
                 
-                # Identify main timestamp column (prefer 'timestamp' or 'time stamp')
+                # Identify main timestamp column (prefer 'timestamp' or 'time stamp' or 'Forecast Date')
                 if main_timestamp_col is None:
                     if 'timestamp' in col.lower() or (col.lower() == 'time stamp'):
+                        main_timestamp_col = col
+                    elif col == 'Forecast Date':
+                        # For weather data, use Forecast Date as main timestamp
                         main_timestamp_col = col
         
         # Rename main timestamp column to standard 'timestamp'

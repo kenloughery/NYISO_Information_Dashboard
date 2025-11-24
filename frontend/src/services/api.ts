@@ -33,6 +33,7 @@ import type {
   Stats,
   DateRangeParams,
   ZoneFilterParams,
+  WeatherForecastParams,
   ConstraintParams,
   AncillaryServiceParams,
   RTDASpreadParams,
@@ -120,14 +121,18 @@ export const fetchOutages = async (params?: DateRangeParams & {
   return response.data;
 };
 
-export const fetchWeatherForecast = async (params?: DateRangeParams): Promise<WeatherForecast[]> => {
+export const fetchWeatherForecast = async (params?: WeatherForecastParams): Promise<WeatherForecast[]> => {
   const response = await api.get<WeatherForecast[]>('/api/weather-forecast', { params });
   return response.data;
 };
 
-export const fetchCurrentWeather = async (location?: string): Promise<WeatherForecast[]> => {
+export const fetchCurrentWeather = async (params?: {
+  location?: string;
+  zone_name?: string;
+  data_source?: 'NYISO' | 'OpenMeteo';
+}): Promise<WeatherForecast[]> => {
   const response = await api.get<WeatherForecast[]>('/api/weather-current', { 
-    params: location ? { location } : {} 
+    params: params || {} 
   });
   return response.data;
 };
