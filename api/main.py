@@ -2099,6 +2099,14 @@ async def ping():
     return {"status": "ok", "message": "pong"}
 
 
+@app.get("/favicon.ico")
+async def favicon():
+    """Handle favicon requests to prevent 404s."""
+    # Return 204 No Content - browser will use default
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Railway/deployment monitoring."""
@@ -2243,28 +2251,52 @@ if frontend_root:
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
         """Serve React frontend for all non-API routes (SPA catch-all)."""
-        # Don't serve frontend for API routes, docs, or static assets
-        if (full_path.startswith("api/") or 
-            full_path.startswith("docs") or 
-            full_path.startswith("redoc") or
-            full_path.startswith("openapi.json") or
-            full_path.startswith("assets/") or
-            full_path.startswith("static/")):
-            raise HTTPException(status_code=404, detail="Not found")
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # Serve index.html for SPA routing (React Router)
-        index_file = frontend_root / "index.html"
-        if index_file.exists():
-            return FileResponse(
-                str(index_file),
-                media_type="text/html",
-                headers={"Cache-Control": "no-cache"}
-            )
-        else:
-            logger.error(f"Index.html not found at {index_file}")
-            raise HTTPException(
-                status_code=500, 
-                detail="Frontend not built. Run 'npm run build' in frontend directory."
+        try:
+            # Don't serve frontend for API routes, docs, or static assets
+            if (full_path.startswith("api/") or 
+                full_path.startswith("docs") or 
+                full_path.startswith("redoc") or
+                full_path.startswith("openapi.json") or
+                full_path.startswith("assets/") or
+                full_path.startswith("static/")):
+                raise HTTPException(status_code=404, detail="Not found")
+            
+            # Serve index.html for SPA routing (React Router)
+            index_file = frontend_root / "index.html"
+            if index_file.exists():
+                try:
+                    return FileResponse(
+                        str(index_file),
+                        media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+                    )
+                except Exception as file_error:
+                    logger.error(f"Error serving index.html for path '{full_path}': {file_error}")
+                    # Return a simple HTML response instead of crashing
+                    from fastapi.responses import HTMLResponse
+                    return HTMLResponse(
+                        content="<html><body><h1>NYISO Dashboard</h1><p>Frontend file serving error. Check logs.</p></body></html>",
+                        status_code=200
+                    )
+            else:
+                logger.error(f"Index.html not found at {index_file}")
+                raise HTTPException(
+                    status_code=500, 
+                    detail="Frontend not built. Run 'npm run build' in frontend directory."
+                )
+        except HTTPException:
+            # Re-raise HTTP exceptions (404, 500, etc.)
+            raise
+        except Exception as e:
+            # Catch any other errors and return a safe response
+            logger.exception(f"Unexpected error serving frontend for path '{full_path}': {e}")
+            from fastapi.responses import HTMLResponse
+            return HTMLResponse(
+                content="<html><body><h1>NYISO Dashboard</h1><p>Error loading frontend. Please try again.</p></body></html>",
+                status_code=200
             )
     
     logger.info("Frontend serving configured successfully")
