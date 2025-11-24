@@ -121,13 +121,18 @@ def main():
         logger.info("Starting uvicorn server...")
         logger.info(f"Server will listen on {host}:{port}")
         
-        # Use uvicorn.run with access_log disabled for Railway (reduces noise)
+        # Use uvicorn.run with optimized settings for Railway
+        # Set timeout to prevent hanging requests
         uvicorn.run(
             app,
             host=host,
             port=port,
             log_level="info",
-            access_log=False  # Railway handles access logs
+            access_log=False,  # Railway handles access logs
+            timeout_keep_alive=5,  # Keep-alive timeout (seconds)
+            timeout_graceful_shutdown=10,  # Graceful shutdown timeout
+            limit_concurrency=100,  # Limit concurrent connections
+            limit_max_requests=1000,  # Restart worker after N requests (prevents memory leaks)
         )
     except ImportError as e:
         logger.error(f"Import error: {e}")
