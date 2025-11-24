@@ -23,10 +23,18 @@ logger = logging.getLogger(__name__)
 def run_scheduler():
     """Run the scheduler in a background thread."""
     try:
+        import time
+        # Delay scheduler start to allow API to bind to port and pass health checks
+        # This prevents resource contention during startup (CPU/SQLite locks)
+        logger.info("Waiting 30s before starting scheduler to allow API startup...")
+        time.sleep(30)
+        
         from scraper.scheduler import NYISOScheduler
         
         logger.info("Starting NYISO scheduler in background thread...")
         scheduler = NYISOScheduler()
+        # Run immediately=True scrapes recent data, which is heavy
+        # We've delayed start, so API should be up now.
         scheduler.start(run_immediately=True)
     except Exception as e:
         logger.exception(f"Error in scheduler thread: {e}")
