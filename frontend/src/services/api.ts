@@ -48,6 +48,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // In production, use relative URLs (same origin)
+  // This ensures API calls work when frontend and backend are served together
+  withCredentials: false, // Don't send cookies for CORS
 });
 
 // Reference Data

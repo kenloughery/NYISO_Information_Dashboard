@@ -2,7 +2,10 @@
  * Application configuration constants
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// In production (served from same origin), use empty string for relative URLs
+// In development, use localhost:8000 or the VITE_API_BASE_URL env var
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
 export const REFRESH_INTERVALS = {
   REAL_TIME: 5 * 60 * 1000, // 5 minutes
