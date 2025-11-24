@@ -2122,10 +2122,10 @@ async def health_check():
         from database.schema import get_session
         db = get_session()
         try:
-        # Simple query to test database connection
-        db.query(Zone).limit(1).all()
+            # Simple query to test database connection
+            db.query(Zone).limit(1).all()
             db.close()
-        return {"status": "healthy", "database": "connected"}
+            return {"status": "healthy", "database": "connected"}
         except Exception as db_error:
             db.close()
             return {
