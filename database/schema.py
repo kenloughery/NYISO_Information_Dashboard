@@ -508,7 +508,8 @@ def create_engine_instance():
     """Create SQLAlchemy engine."""
     url = get_database_url()
     if url.startswith('sqlite'):
-        return create_engine(url, echo=False, connect_args={'check_same_thread': False})
+        # Increase timeout to 30s (default 5s) to handle concurrent access better
+        return create_engine(url, echo=False, connect_args={'check_same_thread': False, 'timeout': 30})
     else:
         return create_engine(url, echo=False, pool_pre_ping=True)
 
