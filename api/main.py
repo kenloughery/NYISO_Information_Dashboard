@@ -388,52 +388,77 @@ def get_db():
 @app.get("/")
 async def root():
     """API root endpoint or frontend index (in production)."""
-    # Check if frontend is available (production mode)
-    static_dir = Path(__file__).parent.parent / "static"
-    frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
-    
-    frontend_root = static_dir if static_dir.exists() else (frontend_dist if frontend_dist.exists() else None)
-    
-    if frontend_root:
-        # Production: serve frontend index.html
-        index_file = frontend_root / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file))
-    
-    # Development: return API info
-    return {
-        "message": "NYISO Data API",
-        "version": "1.0.0",
-        "endpoints": {
-            "zones": "/api/zones",
-            "interfaces": "/api/interfaces",
-            "realtime_lbmp": "/api/realtime-lbmp",
-            "dayahead_lbmp": "/api/dayahead-lbmp",
-            "timeweighted_lbmp": "/api/timeweighted-lbmp",
-            "ancillary_services": "/api/ancillary-services",
-            "realtime_load": "/api/realtime-load",
-            "load_forecast": "/api/load-forecast",
-            "interface_flows": "/api/interface-flows",
-            "interregional_flows": "/api/interregional-flows",
-            "analytics": "/api/analytics/summary",
-            "weather_current": "/api/weather-current",
-            "market_advisories": "/api/market-advisories",
-            "constraints": "/api/constraints",
-            "external_rto_prices": "/api/external-rto-prices",
-            "atc_ttc": "/api/atc-ttc",
-            "outages": "/api/outages",
-            "weather_forecast": "/api/weather-forecast",
-            "fuel_mix": "/api/fuel-mix",
-            "rt_da_spreads": "/api/rt-da-spreads",
-            "zone_spreads": "/api/zone-spreads",
-            "load_forecast_errors": "/api/load-forecast-errors",
-            "reserve_margins": "/api/reserve-margins",
-            "price_volatility": "/api/price-volatility",
-            "correlations": "/api/correlations",
-            "trading_signals": "/api/trading-signals",
-            "stats": "/api/stats"
-        }
-    }
+    try:
+        # Check if frontend is available (production mode)
+        static_dir = Path(__file__).parent.parent / "static"
+        frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+        
+        frontend_root = static_dir if static_dir.exists() else (frontend_dist if frontend_dist.exists() else None)
+        
+        if frontend_root:
+            # Production: serve frontend index.html
+            index_file = frontend_root / "index.html"
+            if index_file.exists():
+                try:
+                    return FileResponse(
+                        str(index_file),
+                        media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+                    )
+                except Exception as file_error:
+                    logger.error(f"Error serving index.html: {file_error}")
+                    # Fall through to return API info
+            else:
+                logger.warning(f"index.html not found at {index_file}")
+        
+        # Development: return API info (or fallback if frontend serving fails)
+        return JSONResponse(content={
+            "message": "NYISO Data API",
+            "version": "1.0.0",
+            "status": "running",
+            "frontend_available": frontend_root is not None,
+            "endpoints": {
+                "zones": "/api/zones",
+                "interfaces": "/api/interfaces",
+                "realtime_lbmp": "/api/realtime-lbmp",
+                "dayahead_lbmp": "/api/dayahead-lbmp",
+                "timeweighted_lbmp": "/api/timeweighted-lbmp",
+                "ancillary_services": "/api/ancillary-services",
+                "realtime_load": "/api/realtime-load",
+                "load_forecast": "/api/load-forecast",
+                "interface_flows": "/api/interface-flows",
+                "interregional_flows": "/api/interregional-flows",
+                "analytics": "/api/analytics/summary",
+                "weather_current": "/api/weather-current",
+                "market_advisories": "/api/market-advisories",
+                "constraints": "/api/constraints",
+                "external_rto_prices": "/api/external-rto-prices",
+                "atc_ttc": "/api/atc-ttc",
+                "outages": "/api/outages",
+                "weather_forecast": "/api/weather-forecast",
+                "fuel_mix": "/api/fuel-mix",
+                "rt_da_spreads": "/api/rt-da-spreads",
+                "zone_spreads": "/api/zone-spreads",
+                "load_forecast_errors": "/api/load-forecast-errors",
+                "reserve_margins": "/api/reserve-margins",
+                "price_volatility": "/api/price-volatility",
+                "correlations": "/api/correlations",
+                "trading_signals": "/api/trading-signals",
+                "stats": "/api/stats",
+                "debug_db_stats": "/api/debug/db-stats"
+            }
+        })
+    except Exception as e:
+        logger.exception(f"Error in root route: {e}")
+        # Always return something, never crash
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "error",
+                "message": "API is running but root route encountered an error",
+                "error": str(e)
+            }
+        )
 
 
 @app.get("/api/zones", response_model=List[ZoneResponse])
