@@ -41,7 +41,7 @@ export const WeatherCarousel = () => {
     if (!timestamp) return null;
     
     // Parse timestamp and treat as Eastern Time
-    let dateStr = typeof timestamp === 'string' ? timestamp : timestamp.toISOString();
+    let dateStr: string = typeof timestamp === 'string' ? timestamp : String(timestamp);
     
     // Check if it already has timezone info (look for timezone pattern at the end: +HH:MM, -HH:MM, or Z)
     const hasTimezone = dateStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateStr);

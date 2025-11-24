@@ -47,13 +47,13 @@ const REGION_RTO_MAPPING: Record<string, string> = {
   'HQ': 'IESO', // Note: HQ may not have separate price data
 };
 
-// Region Colors
-const REGION_COLORS: Record<string, string> = {
-  'PJM': '#f97316', // Orange
-  'ISO-NE': '#3b82f6', // Blue
-  'IESO': '#10b981', // Green
-  'HQ': '#a855f7', // Purple
-};
+// Region Colors (kept for potential future use)
+// const REGION_COLORS: Record<string, string> = {
+//   'PJM': '#f97316', // Orange
+//   'ISO-NE': '#3b82f6', // Blue
+//   'IESO': '#10b981', // Green
+//   'HQ': '#a855f7', // Purple
+// };
 
 // Node Name Display Mapping
 const NODE_DISPLAY_NAMES: Record<string, string> = {
@@ -93,7 +93,7 @@ export const Section10_InterregionalComparison = () => {
     if (!flowsData || !nyisoPrices || !externalPrices || flowsData.length === 0) return [];
     
     const latestNYISOTimestamp = nyisoPrices[0]?.timestamp;
-    const latestExternalTimestamp = externalPrices[0]?.timestamp;
+    // const latestExternalTimestamp = externalPrices[0]?.timestamp; // Reserved for future use
     
     // Group external prices by RTO
     const rtoPriceMap: { [key: string]: typeof externalPrices[0] } = {};

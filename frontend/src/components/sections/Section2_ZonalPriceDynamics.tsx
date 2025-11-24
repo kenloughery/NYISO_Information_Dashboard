@@ -64,7 +64,7 @@ export const Section2_ZonalPriceDynamics = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
   const { data: lbmpData, isLoading: lbmpLoading, error: lbmpError } = useRealTimeLBMP();
-  const { data: daLbmpData, isLoading: daLbmpLoading } = useDayAheadLBMP();
+  const { data: daLbmpData } = useDayAheadLBMP();
   const { data: zoneSpreadsData, isLoading: spreadsLoading } = useZoneSpreads({ limit: 100 });
   const { data: rtdaSpreadsData, isLoading: rtdaSpreadsLoading } = useRTDASpreads({ limit: 100 });
   const { data: zoneBoundaries, isLoading: boundariesLoading, error: boundariesError } = useZoneBoundaries();
@@ -346,15 +346,15 @@ export const Section2_ZonalPriceDynamics = () => {
     
     // Add hover effects
     layer.on({
-      mouseover: (e) => {
-        const layer = e.target;
+      mouseover: (e: L.LeafletMouseEvent) => {
+        const layer = e.target as L.Path;
         layer.setStyle({
           weight: 3,
           fillOpacity: 0.8,
         });
       },
-      mouseout: (e) => {
-        const layer = e.target;
+      mouseout: (e: L.LeafletMouseEvent) => {
+        const layer = e.target as L.Path;
         const zoneName = layer.feature.properties?.zone_name || layer.feature.properties?.Zone || layer.feature.properties?.zone;
         const zoneData = zonePrices[zoneName];
         const price = zoneData?.price || 0;
@@ -418,7 +418,7 @@ export const Section2_ZonalPriceDynamics = () => {
               ) : zoneBoundaries && !boundariesError ? (
                 // Primary: Show GeoJSON polygons (choropleth map)
                 <MapContainer
-                  center={[42.65, -74.5]}
+                  center={[42.65, -74.5] as [number, number]}
                   zoom={7}
                   style={{ height: '100%', width: '100%' }}
                   className="z-0"
@@ -431,14 +431,14 @@ export const Section2_ZonalPriceDynamics = () => {
                   <GeoJSON
                     key="nyiso-zones" // Force re-render if data changes
                     data={transformedGeoJSON as GeoJsonObject}
-                    style={getZoneStyle}
-                    onEachFeature={onEachFeature}
+                    style={getZoneStyle as any}
+                    onEachFeature={onEachFeature as any}
                   />
                 </MapContainer>
               ) : (
                 // Fallback: Show point markers if GeoJSON unavailable
                 <MapContainer
-                  center={[42.65, -74.5]}
+                  center={[42.65, -74.5] as [number, number]}
                   zoom={7}
                   style={{ height: '100%', width: '100%' }}
                   className="z-0"
@@ -451,7 +451,7 @@ export const Section2_ZonalPriceDynamics = () => {
                     zonePricesArray.map((zone) => (
                       <CircleMarker
                         key={zone.zone}
-                        center={ZONE_COORDINATES[zone.zone] || [42.65, -73.75]}
+                        center={(ZONE_COORDINATES[zone.zone] || [42.65, -73.75]) as [number, number]}
                         radius={15}
                         pathOptions={{
                           fillColor: getPriceColor(zone.price),

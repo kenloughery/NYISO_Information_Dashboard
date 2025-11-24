@@ -10,7 +10,6 @@ import { useMemo, useState, Fragment } from 'react';
 import { useRealTimeLBMP } from '@/hooks/useRealTimeData';
 import { useDayAheadLBMP, useTimeWeightedLBMP, useRTDASpreads } from '@/hooks/useHistoricalData';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { ResponsiveChart } from '@/components/common/ResponsiveChart';
 import { EnhancedCard } from '@/components/common/EnhancedCard';

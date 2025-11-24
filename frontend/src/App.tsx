@@ -36,7 +36,7 @@ function App() {
     if (!timestamp) return null;
     
     // Parse timestamp string (format: "2025-12-15T15:45:23" or "2025-12-15T15:45:23.123456")
-    let dateStr = typeof timestamp === 'string' ? timestamp : timestamp.toISOString();
+    let dateStr: string = typeof timestamp === 'string' ? timestamp : String(timestamp);
     
     // Remove microseconds if present
     dateStr = dateStr.split('.')[0];
@@ -48,8 +48,8 @@ function App() {
       // Timestamp is naive but represents Eastern Time
       // Parse components and format directly as ET (no conversion needed)
       const [datePart, timePart] = dateStr.split('T');
-      const [year, month, day] = datePart.split('-').map(Number);
-      const [hour, minute, second] = (timePart || '00:00:00').split(':').map(Number);
+      const [, month] = datePart.split('-').map(Number);
+      const timeComponents = (timePart || '00:00:00').split(':').map(Number);
       
       // Create a date object by appending ET timezone offset
       // We need to determine if DST is in effect
