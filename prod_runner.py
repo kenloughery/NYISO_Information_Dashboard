@@ -53,12 +53,12 @@ def main():
         raise
     
     # Set database path if not already set
-    # For SQLite, use absolute path with proper format
-    # sqlite:///path (3 slashes) works for both relative and absolute paths in SQLAlchemy
+    # For SQLite absolute paths, use 4 slashes: sqlite:////absolute/path
+    # For relative paths, use 3 slashes: sqlite:///relative/path
     if not os.getenv('DATABASE_URL'):
         db_path = str(data_dir / "nyiso_data.db")
-        # Use absolute path - SQLAlchemy handles this correctly
-        os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
+        # Use 4 slashes for absolute path on Unix systems
+        os.environ['DATABASE_URL'] = f'sqlite:////{db_path}'
         logger.info(f"Database URL set to: {os.environ['DATABASE_URL']}")
     
     # Initialize database before starting scheduler to catch any issues early
@@ -66,13 +66,27 @@ def main():
     try:
         from database.schema import init_database
         logger.info("Initializing database schema...")
+        logger.info(f"Database will be created at: {os.getenv('DATABASE_URL', 'not set')}")
         init_database()
         logger.info("Database schema initialized successfully")
+        
+        # Verify database file was created
+        db_file = data_dir / "nyiso_data.db"
+        if db_file.exists():
+            logger.info(f"Database file exists: {db_file} (size: {db_file.stat().st_size} bytes)")
+        else:
+            logger.warning(f"Database file not found at: {db_file}")
+        
+        # Small delay to ensure database is fully ready
+        import time
+        time.sleep(0.5)
+        
     except Exception as e:
         logger.exception(f"Failed to initialize database: {e}")
         # Don't raise - let the app start and scheduler will retry
     
     # Start scheduler in background daemon thread
+    # The scheduler will use the same database connection, so it should work now
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
     logger.info("Scheduler thread started (daemon mode)")

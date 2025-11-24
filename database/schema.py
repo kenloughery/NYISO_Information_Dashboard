@@ -478,7 +478,8 @@ def get_database_url():
     data_dir = Path('/app/data')
     data_dir.mkdir(parents=True, exist_ok=True)
     db_path = str(data_dir / 'nyiso_data.db')
-    return f'sqlite:///{db_path}'
+    # Use 4 slashes for absolute path on Unix systems
+    return f'sqlite:////{db_path}'
 
 
 def create_engine_instance():
