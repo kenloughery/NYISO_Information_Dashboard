@@ -158,7 +158,9 @@ class NYISOScraper:
             csv_content = self.downloader.download_with_fallback(
                 direct_url,
                 archive_url,
-                filename_pattern
+                filename_pattern,
+                target_date=date,
+                url_template=config.direct_csv_url_template
             )
             
             if not csv_content:

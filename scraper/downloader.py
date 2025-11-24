@@ -152,15 +152,19 @@ class NYISODownloader:
         self,
         direct_url: str,
         archive_url: Optional[str] = None,
-        filename_pattern: Optional[str] = None
+        filename_pattern: Optional[str] = None,
+        target_date: Optional[datetime] = None,
+        url_template: Optional[str] = None
     ) -> Optional[str]:
         """
         Download CSV with archive fallback.
         
         Args:
             direct_url: Direct CSV URL
-            archive_url: Archive ZIP URL (optional)
+            archive_url: Archive ZIP URL (optional, for current month)
             filename_pattern: Filename pattern for archive extraction
+            target_date: Target date for the data (used to try previous date and previous month's archive)
+            url_template: URL template with {YYYYMMDD} placeholder (used to build previous date URL)
             
         Returns:
             CSV content as string, or None if both fail
@@ -173,14 +177,63 @@ class NYISODownloader:
         except DownloadError:
             logger.warning(f"Direct download failed: {direct_url}")
         
-        # Fallback to archive if enabled
-        if self.use_archive_fallback and archive_url:
-            logger.info(f"Trying archive fallback: {archive_url}")
-            csv_content = self.download_zip(archive_url, filename_pattern or '')
-            if csv_content:
-                return csv_content
+        # Try previous date's direct CSV before archives
+        # Handles edge cases automatically:
+        # - Month boundaries: Dec 1 -> Nov 30
+        # - Year boundaries: Jan 1 -> Dec 31 of previous year
+        # - Leap years: Mar 1 -> Feb 29 in leap year, Feb 28 otherwise
+        if target_date and url_template:
+            try:
+                from datetime import timedelta
+                # Python's timedelta handles all edge cases (month/year boundaries, leap years)
+                prev_date = target_date - timedelta(days=1)
+                prev_date_str = prev_date.strftime('%Y%m%d')
+                prev_direct_url = url_template.replace('{YYYYMMDD}', prev_date_str)
+                
+                logger.info(f"Trying previous date's direct CSV: {prev_direct_url}")
+                csv_content = self.download_csv(prev_direct_url)
+                if csv_content:
+                    logger.info(f"Successfully downloaded previous date's CSV: {prev_direct_url}")
+                    return csv_content
+            except Exception as e:
+                logger.debug(f"Error trying previous date's CSV: {e}")
         
-        logger.error(f"Both direct and archive downloads failed for {direct_url}")
+        # Fallback to archive if enabled
+        if self.use_archive_fallback:
+            # Try current month's archive first
+            if archive_url:
+                logger.info(f"Trying archive fallback (current month): {archive_url}")
+                csv_content = self.download_zip(archive_url, filename_pattern or '')
+                if csv_content:
+                    return csv_content
+            
+            # If current month's archive fails and we have a target date, try previous month
+            # Handles edge cases automatically:
+            # - Month boundaries: Dec -> Nov archive
+            # - Year boundaries: Jan -> Dec archive of previous year
+            if target_date and archive_url:
+                try:
+                    from datetime import timedelta
+                    # Calculate previous month's first day
+                    # Method: Go to first of current month, subtract 1 day, then go to first of that month
+                    # This handles all edge cases including year boundaries
+                    # Example: Jan 1, 2026 -> Dec 1, 2025
+                    # Example: Dec 1, 2025 -> Nov 1, 2025
+                    prev_month = (target_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+                    
+                    # Build previous month's archive URL
+                    prev_month_str = prev_month.strftime('%Y%m01')
+                    current_month_str = target_date.strftime('%Y%m01')
+                    prev_archive_url = archive_url.replace(current_month_str, prev_month_str)
+                    
+                    logger.info(f"Trying archive fallback (previous month): {prev_archive_url}")
+                    csv_content = self.download_zip(prev_archive_url, filename_pattern or '')
+                    if csv_content:
+                        return csv_content
+                except Exception as e:
+                    logger.debug(f"Error trying previous month archive: {e}")
+        
+        logger.error(f"All download attempts failed for {direct_url}")
         return None
     
     def check_url_exists(self, url: str) -> bool:
