@@ -2,7 +2,7 @@
 # Builds React frontend and serves everything from FastAPI in a monolithic container
 
 # Stage 1: Build Frontend
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app/frontend
 
