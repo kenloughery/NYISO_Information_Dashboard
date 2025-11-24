@@ -60,7 +60,7 @@ deployment/
 test_*.py
 *_test.py
 
-# Static files (will be copied from frontend build)
-static/
+# Static files - we need to include static/ for nyiso_zones.geojson
+# (frontend dist will be merged into static/ during build)
 
 

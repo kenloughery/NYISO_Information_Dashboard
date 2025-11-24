@@ -45,7 +45,8 @@ COPY database/ ./database/
 COPY config/ ./config/
 COPY scripts/ ./scripts/
 
-# Copy existing static files first (e.g., nyiso_zones.geojson)
+# Create static directory and copy existing static files (e.g., nyiso_zones.geojson)
+RUN mkdir -p ./static
 COPY static/ ./static/
 
 # Copy built frontend from builder stage to a temp location, then merge into static
