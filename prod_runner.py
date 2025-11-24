@@ -53,29 +53,52 @@ def main():
         raise
     
     # Set database path if not already set
-    # For SQLite absolute paths, use 4 slashes: sqlite:////absolute/path
-    # For relative paths, use 3 slashes: sqlite:///relative/path
+    # For SQLite, we'll use the absolute path directly
     if not os.getenv('DATABASE_URL'):
-        db_path = str(data_dir / "nyiso_data.db")
-        # Use 4 slashes for absolute path on Unix systems
-        os.environ['DATABASE_URL'] = f'sqlite:////{db_path}'
+        db_path = data_dir / "nyiso_data.db"
+        # SQLAlchemy SQLite format: sqlite:////absolute/path (4 slashes for absolute)
+        # But we need to ensure the path is properly formatted
+        # Alternative: use sqlite:/// with absolute path (3 slashes also works for absolute)
+        db_path_str = str(db_path.absolute())
+        # Try 3 slashes first - SQLAlchemy handles absolute paths with 3 slashes too
+        os.environ['DATABASE_URL'] = f'sqlite:///{db_path_str}'
         logger.info(f"Database URL set to: {os.environ['DATABASE_URL']}")
+        logger.info(f"Database file path: {db_path_str}")
+        logger.info(f"Database file exists: {db_path.exists()}")
+        logger.info(f"Database directory exists: {data_dir.exists()}")
+        logger.info(f"Database directory permissions: {oct(data_dir.stat().st_mode)}")
     
     # Initialize database before starting scheduler to catch any issues early
     # This ensures the database file and schema exist before the scheduler tries to use it
     try:
-        from database.schema import init_database
+        from database.schema import init_database, get_database_url
         logger.info("Initializing database schema...")
-        logger.info(f"Database will be created at: {os.getenv('DATABASE_URL', 'not set')}")
+        db_url = get_database_url()
+        logger.info(f"Database URL: {db_url}")
+        
+        # Try to create an empty database file first to ensure we can write
+        db_file = data_dir / "nyiso_data.db"
+        try:
+            # Touch the file to ensure it exists and is writable
+            db_file.touch(exist_ok=True)
+            logger.info(f"Database file created/touched: {db_file}")
+        except Exception as touch_error:
+            logger.error(f"Failed to create database file: {touch_error}")
+            raise
+        
+        # Now initialize the schema
         init_database()
         logger.info("Database schema initialized successfully")
         
-        # Verify database file was created
-        db_file = data_dir / "nyiso_data.db"
+        # Verify database file was created and has content
         if db_file.exists():
-            logger.info(f"Database file exists: {db_file} (size: {db_file.stat().st_size} bytes)")
+            file_size = db_file.stat().st_size
+            logger.info(f"Database file exists: {db_file} (size: {file_size} bytes)")
+            if file_size == 0:
+                logger.warning("Database file is empty - schema creation may have failed")
         else:
-            logger.warning(f"Database file not found at: {db_file}")
+            logger.error(f"Database file not found at: {db_file}")
+            raise FileNotFoundError(f"Database file was not created at {db_file}")
         
         # Small delay to ensure database is fully ready
         import time

@@ -477,9 +477,10 @@ def get_database_url():
     # Default to SQLite in data directory
     data_dir = Path('/app/data')
     data_dir.mkdir(parents=True, exist_ok=True)
-    db_path = str(data_dir / 'nyiso_data.db')
-    # Use 4 slashes for absolute path on Unix systems
-    return f'sqlite:////{db_path}'
+    db_path = data_dir / 'nyiso_data.db'
+    db_path_str = str(db_path.absolute())
+    # SQLAlchemy handles absolute paths with 3 slashes too
+    return f'sqlite:///{db_path_str}'
 
 
 def create_engine_instance():
