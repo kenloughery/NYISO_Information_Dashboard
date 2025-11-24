@@ -52,10 +52,18 @@ def main():
     logger.info("Scheduler thread started (daemon mode)")
     
     # Get port from environment (Railway sets PORT env var)
-    port = int(os.getenv('PORT', 8000))
+    # Railway provides PORT as a string, ensure it's converted to int
+    port_str = os.getenv('PORT', '8000')
+    try:
+        port = int(port_str)
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid PORT value '{port_str}', defaulting to 8000")
+        port = 8000
+    
     host = os.getenv('HOST', '0.0.0.0')
     
     logger.info(f"Starting FastAPI server on {host}:{port}")
+    logger.info(f"PORT environment variable: {os.getenv('PORT', 'not set')}")
     
     # Import and run uvicorn
     import uvicorn
