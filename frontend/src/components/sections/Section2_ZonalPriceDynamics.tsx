@@ -297,6 +297,9 @@ export const Section2_ZonalPriceDynamics = () => {
     const zoneName = feature.properties?.zone_name || feature.properties?.Zone || feature.properties?.zone;
     const zoneData = zonePrices[zoneName];
     
+    // Store zone name in layer for later access in event handlers
+    (layer as any)._zoneName = zoneName;
+    
     // Create popup content
     if (zoneData) {
       const popupContent = `
@@ -355,13 +358,14 @@ export const Section2_ZonalPriceDynamics = () => {
       },
       mouseout: (e: L.LeafletMouseEvent) => {
         const layer = e.target as L.Path;
-        const zoneName = layer.feature.properties?.zone_name || layer.feature.properties?.Zone || layer.feature.properties?.zone;
-        const zoneData = zonePrices[zoneName];
-        const price = zoneData?.price || 0;
+        // Get zone name from stored property (set in onEachFeature)
+        const storedZoneName = (layer as any)._zoneName || zoneName;
+        const storedZoneData = zonePrices[storedZoneName];
+        const storedPrice = storedZoneData?.price || 0;
         layer.setStyle({
           weight: 2,
           fillOpacity: 0.6,
-          fillColor: getPriceColor(price),
+          fillColor: getPriceColor(storedPrice),
         });
       },
     });
