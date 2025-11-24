@@ -78,6 +78,10 @@ class NYISOScheduler:
                     'hourly'
                 )
                 logger.info(f"Scheduled {config.report_code} hourly (was daily, now hourly per requirement)")
+        
+        # Schedule Open Meteo weather data scraping (hourly)
+        schedule.every().hour.do(self._scrape_openmeteo_wrapper)
+        logger.info("Scheduled Open Meteo weather data hourly")
     
     def _scrape_wrapper(self, report_code: str, frequency_type: str):
         """Wrapper for scheduled scraping."""
@@ -115,6 +119,27 @@ class NYISOScheduler:
                 
         except Exception as e:
             logger.exception(f"Error in scheduled scrape for {report_code}: {str(e)}")
+    
+    def _scrape_openmeteo_wrapper(self):
+        """Wrapper for Open Meteo weather scraping."""
+        try:
+            # Check if OpenMeteo API key is configured
+            import os
+            if not os.getenv('OPENMETEO_API_KEY'):
+                logger.warning("OPENMETEO_API_KEY not set, skipping Open Meteo weather scrape")
+                return
+            
+            logger.info("Running scheduled Open Meteo weather scrape")
+            date = datetime.now()
+            job = self.scraper.scrape_openmeteo_weather(date, force=True)
+            
+            if job and job.status == 'completed':
+                logger.info(f"Successfully scraped Open Meteo weather: {job.rows_inserted} inserted, {job.rows_updated} updated")
+            else:
+                logger.warning(f"Open Meteo scraping failed: {job.error_message if job else 'No job created'}")
+                
+        except Exception as e:
+            logger.exception(f"Error in Open Meteo scrape: {str(e)}")
     
     def start(self, run_immediately: bool = True):
         """Start the scheduler."""
