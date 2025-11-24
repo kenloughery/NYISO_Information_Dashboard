@@ -1,0 +1,15 @@
+requests>=2.31.0
+pandas>=2.1.0
+geopandas>=0.14.0  # For GeoJSON generation from Census data
+sqlalchemy>=2.0.0
+python-dateutil>=2.8.2
+pytz>=2023.3
+schedule>=1.2.0
+python-dotenv>=1.0.0
+psycopg2-binary>=2.9.9  # For PostgreSQL (optional, can use SQLite)
+openpyxl>=3.1.2  # For Excel if needed
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+gunicorn>=21.2.0
+pydantic>=2.0.0
+
