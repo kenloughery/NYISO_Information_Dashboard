@@ -71,9 +71,9 @@ EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
 ENV DATABASE_URL=sqlite:///app/data/nyiso_data.db
 
-# Health check
+# Health check (use PORT env var or default to 8000)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:${PORT:-8000}/health')" || exit 1
+    CMD python -c "import os, requests; port = os.getenv('PORT', '8000'); requests.get(f'http://localhost:{port}/health')" || exit 1
 
 # Run production entrypoint
 CMD ["python", "prod_runner.py"]
