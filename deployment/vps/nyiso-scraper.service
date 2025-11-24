@@ -1,0 +1,30 @@
+[Unit]
+Description=NYISO Data Scraper (5-minute updates)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/nyiso-dashboard
+Environment="PATH=/opt/nyiso-dashboard/venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="DATABASE_URL=sqlite:///opt/nyiso-dashboard/nyiso_data.db"
+ExecStart=/opt/nyiso-dashboard/venv/bin/python run_scraper_prod.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nyiso-scraper
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/nyiso-dashboard
+
+[Install]
+WantedBy=multi-user.target
+
+

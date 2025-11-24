@@ -1,0 +1,34 @@
+Category,Data Type,Report Code,Access Point,Format,Update Frequency,Description
+"Capacity, Energy and Market Advisory",Balancing Market Advisory Summary,P-31,http://mis.nyiso.com/public/,"CSV, HTML",Real-time,Market advisory notifications and summaries
+Real-Time Market Time-Weighted/Integrated LBMP,Zonal Time-Weighted LBMP,P-4A,http://mis.nyiso.com/public/,"CSV, HTML",Hourly (after each hour),Time-weighted average real-time LBMP by zone
+Real-Time Market Time-Weighted/Integrated LBMP,Generator Time-Weighted LBMP,P-4B,http://mis.nyiso.com/public/,"CSV, HTML",Hourly (after each hour),Time-weighted average real-time LBMP by generator bus
+Ancillary Services - Real-Time Market,Real-Time Ancillary Service Prices,P-6B,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,"RT regulation, spinning reserve, non-sync reserve prices by zone"
+Real-Time LBMP,Zonal Real-Time LBMP,P-24A,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Real-time dispatch (RTD) LBMP by zone (5-min intervals)
+Real-Time LBMP,Generator Real-Time LBMP,P-24B,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Real-time dispatch (RTD) LBMP by generator bus (5-min intervals)
+Pricing Data - Day-Ahead Market LBMP,Zonal Day-Ahead LBMP,P-2A,http://mis.nyiso.com/public/,"CSV, HTML",Daily (post Day-Ahead Market),Day-ahead market (DAM) LBMP by zone (hourly)
+Pricing Data - Day-Ahead Market LBMP,Generator Day-Ahead LBMP,P-2B,http://mis.nyiso.com/public/,"CSV, HTML",Daily (post Day-Ahead Market),Day-ahead market (DAM) LBMP by generator bus (hourly)
+Ancillary Services - Day-Ahead Market,Day-Ahead Ancillary Service Prices,P-5,http://mis.nyiso.com/public/,"CSV, HTML",Daily (post Day-Ahead Market),"DAM regulation, spinning reserve, non-sync reserve prices by zone"
+External RTO CTS Prices - Real-Time,RTC vs. External RTO CTS Prices,P-42,http://mis.nyiso.com/public/,"CSV, HTML",Real-time,Real-time commitment (RTC) prices vs external RTO coordinated transaction scheduling prices
+Pricing Data,NYISO Reference Bus LBMP,P-28,http://mis.nyiso.com/public/,"CSV, HTML",Real-time and Day-Ahead,Marginal energy price component at NYISO reference bus (Marcy)
+Outages,Real-Time Scheduled Outages,P-54A,http://mis.nyiso.com/public/,"CSV, HTML",Real-time,Scheduled generator and transmission outages in real-time
+Outages,Real-Time Actual Outages,P-54B,http://mis.nyiso.com/public/,"CSV, HTML",Real-time,Actual generator and transmission outages in real-time
+Outages,Day-Ahead Scheduled Outages,P-54C,http://mis.nyiso.com/public/,"CSV, HTML",Daily,Scheduled outages for day-ahead market
+Outages,Outage Schedules,P-14,http://mis.nyiso.com/public/,HTML,Daily,Comprehensive outage schedules
+Outages,Outage Schedules CSV,P-14B,http://mis.nyiso.com/public/,CSV,Daily,Comprehensive outage schedules in CSV format
+Outages,Generation Maintenance Report,P-15,http://mis.nyiso.com/public/,"CSV, HTML",Daily,Generator maintenance schedule and status
+Constraints,Day-Ahead Limiting Constraints,P-511A,http://mis.nyiso.com/public/,"CSV, HTML",Daily (post Day-Ahead Market),Binding transmission constraints in day-ahead market
+Constraints,Real-Time Limiting Constraints,P-33,http://mis.nyiso.com/public/,"CSV, HTML",Real-time (5-min intervals),Binding transmission constraints in real-time
+Interface Flows,Internal & External Interface Limits & Flows,P-32,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,"Transfer limits and flows for internal/external interfaces (HQ, IESO, PJM, ISO-NE)"
+Interface Flows,Interface Limits & Flows (Current),P-32-CURRENT,http://mis.nyiso.com/public/,"CSV",5-minute intervals,"Current snapshot of interface limits and flows (real-time, always contains latest data)"
+Interface Flows,Lake Erie Circulation - Day-Ahead,P-53B,http://mis.nyiso.com/public/,"CSV, HTML",Daily,Day-ahead Lake Erie circulation flows
+Interface Flows,Lake Erie Circulation - Real-Time,P-34A,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Real-time Lake Erie circulation flows
+PARs,PAR Schedules,P-53A,http://mis.nyiso.com/public/,"CSV, HTML",Hourly,Phase angle regulator scheduled positions
+PARs,PAR Flows,P-34,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Real-time phase angle regulator flows
+ATC-TTC,Available Transfer Capability / Total Transfer Capability,P-8,http://mis.nyiso.com/public/,"CSV, HTML","Hourly (updated 30 min before the hour for next 3 hours), Daily",ATC/TTC for interfaces - current day and next day
+ATC-TTC,Long Term ATC/TTC,P-8A,http://mis.nyiso.com/public/,"CSV, HTML",Daily,Long-term (up to 2 years) ATC/TTC forecasts for external interfaces
+Load Forecast,ISO Load Forecast,P-7,http://mis.nyiso.com/public/,"CSV, HTML",Hourly,System-wide and zonal load forecasts (hourly for next 7 days)
+Load Forecast,Zonal Bid Load,P-59,http://mis.nyiso.com/public/,"CSV, HTML",Daily (post Day-Ahead Market),Bid load by zone from day-ahead market
+Load Forecast,Weather Forecast,P-7A,http://mis.nyiso.com/public/,"CSV, HTML",Updated multiple times daily,Weather forecast data used for load forecasting
+Actual Load,Real-Time Actual Load,P-58B,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Actual measured load by zone (5-min RTD intervals)
+Actual Load,Integrated Real-Time Actual Load,P-58C,http://mis.nyiso.com/public/,"CSV, HTML",Hourly (after each hour),Time-weighted hourly load by zone
+Generation,Real-Time Fuel Mix,P-63,http://mis.nyiso.com/public/,"CSV, HTML",5-minute intervals,Real-time generation by fuel type (gas, nuclear, hydro, wind, solar, other)

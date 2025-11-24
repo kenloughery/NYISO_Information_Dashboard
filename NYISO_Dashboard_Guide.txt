@@ -1,0 +1,102 @@
+Section,Component,Type,Data Source,Update Frequency,Trading Signal
+1. REAL-TIME MARKET OVERVIEW,System Status Indicator,Alert Badge,"System Conditions API, P-31 (Market Advisory)",Real-time,Emergency states = price spike risk
+1. REAL-TIME MARKET OVERVIEW,NYISO-Wide Real-Time Price,Large Numeric Display + Sparkline,P-24A (RT Zonal LBMP) - weighted average,5-minute,RT vs DA spread = balancing market opportunity
+1. REAL-TIME MARKET OVERVIEW,Total Load Ticker,Numeric Display + Mini Bar Chart,P-58B (RT Actual Load),5-minute,Load forecast errors drive price volatility
+1. REAL-TIME MARKET OVERVIEW,Critical Interface Utilization,Horizontal Progress Bars,P-32 (Interface Flows),5-minute,Near-limit interfaces = congestion charges imminent
+1. REAL-TIME MARKET OVERVIEW,Active Constraints Ticker,Scrolling Ticker Tape,P-33 (RT Limiting Constraints),5-minute,Persistent constraints = locational price premiums
+2. ZONAL PRICE DYNAMICS,NYISO Geographic Heat Map,Interactive Heat Map (11 zones),P-24A (RT Zonal LBMP),5-minute,Spatial price differentials = locational arbitrage
+2. ZONAL PRICE DYNAMICS,Zone Price Ranking Table,Live Sortable Table,P-24A (RT Zonal LBMP),5-minute,Largest RT-DA spreads = balancing market alpha
+2. ZONAL PRICE DYNAMICS,Top Intra-Zonal Spreads,Bubble Chart,P-24A (RT Zonal LBMP) - calculated spreads,5-minute,Extreme spreads outside historical range = trading opportunity
+3. MULTI-TIMEFRAME PRICE EVOLUTION,Intraday Price Curves (Multi-Zone),Multi-Line Time Series Chart,P-24A (RT LBMP) + P-2A (DA LBMP),5-minute append,Divergence between RT and DA = balancing market inefficiency
+3. MULTI-TIMEFRAME PRICE EVOLUTION,Rolling 7-Day Price Distribution,Box Plot / Violin Plot,P-4A (Integrated RT LBMP) - 7 days,Hourly,Prices at 95th+ percentile = mean reversion opportunity
+3. MULTI-TIMEFRAME PRICE EVOLUTION,Day-Ahead vs Real-Time Spread Waterfall,Waterfall Chart,P-2A (DA LBMP) vs P-4A (Integrated RT LBMP),Hourly,Consistent direction = predictable balancing market bias
+4. LOAD & FORECAST ANALYTICS,Actual vs Forecast Load Gauge,Bullet Chart / Deviation Gauge,P-58B (RT Actual Load) vs P-7 (Load Forecast),5-minute,Large forecast errors correlate with RT price volatility
+4. LOAD & FORECAST ANALYTICS,Load Forecast Error Heat Map (7-Day),Calendar Heat Map,Historical P-7 vs P-58B comparison,Daily,Predictable forecast errors = exploitable price patterns
+4. LOAD & FORECAST ANALYTICS,Peak Load Warning Indicator,Threshold Alert + Progress Bar,P-58B (RT Actual Load) + Historical peak demand,5-minute,Approaching peak = scarcity pricing trigger
+4. LOAD & FORECAST ANALYTICS,Zonal Load Contribution Stacked Area,Stacked Area Chart,P-58B (RT Actual Load) - all 11 zones,5-minute,Unusual zonal load shifts = locational price impacts
+5. ANCILLARY SERVICES MARKET,Ancillary Services Price Table,Live Matrix Table,P-6B (RT Ancillary Services) + P-5 (DA Ancillary Services),5-minute,"High AS prices = tight reserves, energy price risk"
+5. ANCILLARY SERVICES MARKET,Reserve Margin Gauge,Multi-Gauge Dashboard,Calculated from P-58B (Load) + Available Capacity,5-minute,Low reserves = AS price spikes imminent
+5. ANCILLARY SERVICES MARKET,Ancillary Service Price Volatility Index,Line Chart with Bands,P-6B (RT Ancillary Services) - rolling volatility,Hourly,High volatility = option value in AS capacity positions
+6. TRANSMISSION & CONSTRAINT MONITORING,Active Constraint Impact Matrix,Sortable Data Table + Sparklines,P-33 (RT Limiting Constraints),5-minute,High shadow prices = congestion rent opportunity
+6. TRANSMISSION & CONSTRAINT MONITORING,Interface Flow vs Limit Gauges,Radial Gauge Array,P-32 (Interface Flows),5-minute,Constrained interfaces = external transaction limits
+6. TRANSMISSION & CONSTRAINT MONITORING,Constraint Persistence Heat Map,Calendar Heat Map (24x7 grid),Historical P-33 (RT Constraints),Daily,Predictable constraints = forward tradable congestion
+6. TRANSMISSION & CONSTRAINT MONITORING,Congestion Cost Waterfall (Zonal),Waterfall Chart,P-24A (RT LBMP congestion component),Hourly,High congestion zones = locational capacity value
+7. EXTERNAL MARKET & INTER-ISO FLOWS,Inter-ISO Price Differential,Multi-Bar Chart,P-42 (External RTO CTS Prices) + NYISO P-24A,5-minute,Price spreads >$10/MWh = wheel opportunity
+7. EXTERNAL MARKET & INTER-ISO FLOWS,ATC/TTC Availability Tracker,Stacked Bar Chart + Table,P-8 (ATC/TTC),Hourly (30 min before hour),Limited ATC = constrained import/export economics
+7. EXTERNAL MARKET & INTER-ISO FLOWS,Cross-Border Flow Direction,Sankey Diagram / Flow Diagram,P-32 (Interface Flows) - external ties,5-minute,Flow reversals = market condition changes
+8. TRADING SIGNALS & PORTFOLIO MONITOR,Trade Signal Alert Feed,Scrolling Alert List (Priority Sorted),Algorithm-generated from all data sources,Real-time,All alerts = actionable trading opportunities
+8. TRADING SIGNALS & PORTFOLIO MONITOR,Spread Trade Monitor,P&L Table with Conditional Formatting,"User portfolio positions + live P-24A, P-2A prices",5-minute,Real-time position monitoring and profit taking
+8. TRADING SIGNALS & PORTFOLIO MONITOR,Historical Pattern Matcher,Similarity Score Cards,Current conditions vs historical database,Hourly,Historical analogs predict likely price paths
+8. TRADING SIGNALS & PORTFOLIO MONITOR,Risk Dashboard - VaR & Exposure,Multi-Metric Cards,Portfolio positions + price volatility,5-minute,Real-time risk management and position limits
+9. ADVANCED ANALYTICS & CONTEXT,Outage Impact Analyzer,Network Diagram + Timeline,P-54A/B (Outages) + P-33 (Constraints),Real-time,Major outages = locational price volatility
+9. ADVANCED ANALYTICS & CONTEXT,Weather Overlay (Load Driver),Geographic Map with Weather Icons,P-7A (Weather Forecast) + External weather API,Hourly,Extreme weather = load forecast errors
+9. ADVANCED ANALYTICS & CONTEXT,Price Volatility Cone (Forward Looking),Fan Chart / Volatility Cone,Historical P-24A volatility + current conditions,Hourly,Wide cones = option value; Narrow = trending market
+9. ADVANCED ANALYTICS & CONTEXT,Fuel Mix & Generation Stack,Stacked Area Chart + Pie Chart,Real-Time Dashboard fuel mix data,5-minute,Fuel mix transitions = price regime changes
+9. ADVANCED ANALYTICS & CONTEXT,Correlation Matrix (Multi-Zone),Heat Map Matrix,Rolling 30-day P-24A (all zones),Daily,Low correlation pairs = diversification for spreads
+9. ADVANCED ANALYTICS & CONTEXT,Market Regime Indicator,State Machine Diagram / Icon,Algorithm classifying market conditions,5-minute,Regime shifts = strategy changes required
+
+
+NYISO Power Trading Command Center - Complete Dashboard Blueprint
+I’ve designed a comprehensive, 35-component trading dashboard optimized for professional power market operations in NYISO. This is a Bloomberg Terminal-style system purpose-built for energy trading with real-time intelligence and predictive analytics.
+Dashboard Architecture (9 Sections)
+1. Real-Time Market Overview (Top Banner)
+	•	System Status Indicator: Color-coded alert badges (Normal/Watch/Warning/Emergency)
+	•	NYISO-Wide RT Price: Large display with 24-hour sparkline, color-coded vs day-ahead
+	•	Total Load Ticker: Current MW with forecast deviation heat map
+	•	Critical Interface Utilization: Progress bars showing flow/limit ratios for HQ, IESO, PJM, ISO-NE
+	•	Active Constraints Ticker: Bloomberg-style scrolling tape with constraint names and shadow prices
+2. Zonal Price Dynamics (Left Panel)
+	•	Interactive NY State Heat Map: 11 zones color-coded by LBMP intensity with click-through drill-downs
+	•	Live Zone Rankings Table: Sortable by RT price, congestion, losses, RT-DA spread
+	•	Intra-Zonal Spread Bubble Chart: Visualizes zone-pair price differentials for arbitrage opportunities
+3. Multi-Timeframe Price Evolution (Center Panel)
+	•	RT vs DA Price Curves: Overlay up to 5 zones with shaded congestion component areas
+	•	7-Day Price Distribution: Box plots showing current price vs historical quartiles for mean reversion signals
+	•	RT-DA Spread Waterfall: Hourly bars showing balancing market opportunities by zone
+4. Load & Forecast Analytics (Left Panel - Lower)
+	•	Actual vs Forecast Deviation Gauge: Bullet charts with color-coded error thresholds
+	•	Forecast Error Calendar Heat Map: 7-day × 24-hour grid revealing systematic bias patterns
+	•	Peak Load Warning: Progress bar showing % of seasonal peak with flashing alerts >95%
+	•	Zonal Load Contribution: Stacked area chart with 5-minute updates
+5. Ancillary Services Market (Right Panel)
+	•	AS Price Matrix: Real-time table for Regulation, Spinning, Non-Sync, Operating reserves
+	•	Reserve Margin Gauges: 4 radial gauges showing % of requirement met with color zones
+	•	AS Volatility Index: 30-day rolling volatility vs 95th percentile
+6. Transmission & Constraint Monitoring
+	•	Constraint Impact Matrix: Sortable table with shadow prices, duration, affected zones, trend sparklines
+	•	Interface Flow Radial Gauges: 8 bi-directional gauges for internal/external interfaces
+	•	Constraint Persistence Heat Map: 24×7 grid identifying recurring congestion patterns
+	•	Congestion Cost Waterfall: Decomposition of LBMP into energy, congestion, losses components
+7. External Market & Inter-ISO Flows
+	•	Inter-ISO Price Differentials: Bar chart showing NYISO vs IESO, PJM, ISO-NE spreads for wheel opportunities
+	•	ATC/TTC Tracker: Stacked bars by interface with countdown to next update
+	•	Cross-Border Flow Sankey: Animated diagram with particle flows showing MW magnitude and direction
+8. Trading Signals & Portfolio Monitor
+	•	Priority Alert Feed: ML-ranked scrolling alerts (RT-DA spreads, constraint records, reserve shortages, opportunities)
+	•	Spread Trade Monitor: Real-time P&L table with conditional formatting and exit signals
+	•	Historical Pattern Matcher: ML-based similarity scoring showing top 3 analog days
+	•	Risk Dashboard: VaR, exposure concentration, P&L volatility with traffic light system
+9. Advanced Analytics (Collapsible Panels)
+	•	Outage Impact Analyzer: Network diagram correlating outages with constraints
+	•	Weather Overlay: Temperature/humidity maps linked to load drivers
+	•	Price Volatility Cone: Probabilistic 24-hour forecast with confidence bands
+	•	Fuel Mix Monitor: Real-time generation stack showing marginal fuel
+	•	Correlation Matrix: 11×11 heat map of zone-to-zone price correlations
+	•	Market Regime Indicator: State machine showing Normal/Congested/Emergency with transition probabilities
+Key Trading Signals Generated
+	1.	RT-DA Spreads >$15: Balancing market alpha opportunities
+	2.	Zone Differentials: Locational arbitrage when spreads exceed historical 95th percentile
+	3.	Load Forecast Errors >5%: Volatility prediction for options strategies
+	4.	Constraint Shadow Prices >$50: Congestion rent capture opportunities
+	5.	Interface Utilization >90%: Import/export transaction limits
+	6.	Reserve Margins <105%: Ancillary service price spike warnings
+	7.	Inverted Inter-ISO Spreads: Wheel transaction economics
+	8.	Regime Changes: Automatic strategy adaptation triggers
+Creative Visualization Highlights
+	•	Geographic Heat Map: Animated pulse on zones with rapid price changes (>10% in 15 min)
+	•	Scrolling Constraint Ticker: high alerts for shadow prices >$100/MWh
+	•	Sankey Flow Diagram: Real-time particle animation showing cross-border power flows
+	•	Reserve Gauges: Pulsing red animation when reserves <100% of requirement
+	•	Alert Feed: ML-ranked with historical accuracy tracking and jump-to-section links
+	•	Volatility Cone: Fan chart with asymmetric distributions for skewed markets
+
