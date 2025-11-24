@@ -74,7 +74,7 @@ EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV DATABASE_URL=sqlite:///app/data/nyiso_data.db
+# DATABASE_URL will be set by prod_runner.py to ensure proper directory creation
 
 # Health check (use PORT env var or default to 8000)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
