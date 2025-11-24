@@ -2097,6 +2097,47 @@ async def health_check():
         }
 
 
+@app.get("/api/debug/db-stats")
+async def get_db_stats():
+    """Debug endpoint to check database status and table counts."""
+    try:
+        from sqlalchemy import text
+        db = next(get_db())
+        try:
+            # Get list of tables
+            tables = db.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()
+            table_names = [t[0] for t in tables]
+            
+            stats = {}
+            total_rows = 0
+            
+            for table in table_names:
+                try:
+                    count = db.execute(text(f"SELECT count(*) FROM {table}")).scalar()
+                    stats[table] = count
+                    total_rows += count
+                except Exception as table_error:
+                    stats[table] = f"Error: {str(table_error)}"
+            
+            import os
+            db_url = os.getenv('DATABASE_URL', 'not set')
+            
+            return {
+                "status": "connected",
+                "database_url": db_url,
+                "total_tables": len(table_names),
+                "total_rows": total_rows,
+                "tables": stats
+            }
+        finally:
+            db.close()
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 # Serve static frontend files (for production deployment)
 # This allows the API to serve the React frontend
 # Check for static directory (production) or frontend/dist (development)
