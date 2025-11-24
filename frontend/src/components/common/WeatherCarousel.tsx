@@ -8,15 +8,37 @@ import { useCurrentWeather } from '@/hooks/useHistoricalData';
 import { LoadingSkeleton } from './LoadingSkeleton';
 
 export const WeatherCarousel = () => {
-  const { data: weatherData, isLoading, error, dataUpdatedAt } = useCurrentWeather();
+  // Prioritize Open Meteo data - only fetch NYISO if Open Meteo is not available
+  // First try to get Open Meteo data
+  const { data: openMeteoData, isLoading: openMeteoLoading, error: openMeteoError } = useCurrentWeather({ 
+    data_source: 'OpenMeteo' 
+  });
+  
+  // Fallback to NYISO data only if Open Meteo is not available
+  const { data: nyisoData, isLoading: nyisoLoading } = useCurrentWeather({ 
+    data_source: 'NYISO' 
+  });
+  
+  // Use Open Meteo if available, otherwise fall back to NYISO
+  const weatherData = useMemo(() => {
+    if (openMeteoData && openMeteoData.length > 0) {
+      return openMeteoData;
+    }
+    return nyisoData || [];
+  }, [openMeteoData, nyisoData]);
+  
+  const isLoading = openMeteoLoading || nyisoLoading;
+  const error = openMeteoError;
+  const dataUpdatedAt = openMeteoData ? Date.now() : (nyisoData ? Date.now() : undefined);
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Group weather data by location and data source
-  // If same location has both NYISO and Open Meteo, prefer Open Meteo (more complete data)
+  // Group weather data by location
+  // Since we're already prioritizing Open Meteo at the data level, just group by location
   const groupedData = useMemo(() => {
     if (!weatherData || weatherData.length === 0) return [];
     
-    // Group by location, preferring Open Meteo over NYISO when both exist
+    // Group by location
     const grouped: { [key: string]: typeof weatherData } = {};
     weatherData.forEach((item) => {
       const location = item.location || 'Unknown';
@@ -26,17 +48,12 @@ export const WeatherCarousel = () => {
       grouped[location].push(item);
     });
 
-    // Convert to array format, preferring Open Meteo data when available
-    return Object.entries(grouped).map(([location, items]) => {
-      // Prefer Open Meteo if available, otherwise use first item
-      const openMeteoItem = items.find(item => item.data_source === 'OpenMeteo');
-      const selectedItem = openMeteoItem || items[0];
-      
-      return {
-        location,
-        data: selectedItem,
-      };
-    });
+    // Convert to array format - take first item for each location
+    // (should already be Open Meteo if available due to data prioritization above)
+    return Object.entries(grouped).map(([location, items]) => ({
+      location,
+      data: items[0], // Take the first item for each location
+    }));
   }, [weatherData]);
 
   // Get the latest update timestamp (NYISO operates in Eastern Time)

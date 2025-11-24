@@ -85,8 +85,8 @@ export const Section9_AdvancedAnalytics = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-slate-400 text-sm text-center py-8" role="status" aria-label="No active outages">
-                  No active outages
+                <div className="text-slate-400 text-sm text-center py-8" role="status" aria-label="No active reported outages">
+                  No active reported outages
                 </div>
               )}
             </div>
