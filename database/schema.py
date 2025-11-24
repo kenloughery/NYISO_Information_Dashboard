@@ -10,6 +10,7 @@ import hashlib
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
+from pathlib import Path
 import os
 
 Base = declarative_base()
@@ -468,8 +469,10 @@ def get_database_url():
     db_url = os.getenv('DATABASE_URL')
     if db_url:
         return db_url
-    # Default to SQLite
-    db_path = os.path.join(os.path.dirname(__file__), '..', 'nyiso_data.db')
+    # Default to SQLite in data directory
+    data_dir = Path('/app/data')
+    data_dir.mkdir(parents=True, exist_ok=True)
+    db_path = str(data_dir / 'nyiso_data.db')
     return f'sqlite:///{db_path}'
 
 

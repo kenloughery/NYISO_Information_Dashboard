@@ -38,13 +38,39 @@ def main():
     logger.info("Starting NYISO Dashboard (Production Mode)")
     logger.info("=" * 80)
     
-    # Ensure data directory exists
+    # Ensure data directory exists and is writable
     data_dir = Path("/app/data")
     data_dir.mkdir(parents=True, exist_ok=True)
     
+    # Verify directory is writable
+    try:
+        test_file = data_dir / ".test_write"
+        test_file.write_text("test")
+        test_file.unlink()
+        logger.info(f"Data directory is writable: {data_dir}")
+    except Exception as e:
+        logger.error(f"Data directory is not writable: {e}")
+        raise
+    
     # Set database path if not already set
+    # For SQLite, use absolute path with proper format
+    # sqlite:///path (3 slashes) works for both relative and absolute paths in SQLAlchemy
     if not os.getenv('DATABASE_URL'):
-        os.environ['DATABASE_URL'] = 'sqlite:///app/data/nyiso_data.db'
+        db_path = str(data_dir / "nyiso_data.db")
+        # Use absolute path - SQLAlchemy handles this correctly
+        os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
+        logger.info(f"Database URL set to: {os.environ['DATABASE_URL']}")
+    
+    # Initialize database before starting scheduler to catch any issues early
+    # This ensures the database file and schema exist before the scheduler tries to use it
+    try:
+        from database.schema import init_database
+        logger.info("Initializing database schema...")
+        init_database()
+        logger.info("Database schema initialized successfully")
+    except Exception as e:
+        logger.exception(f"Failed to initialize database: {e}")
+        # Don't raise - let the app start and scheduler will retry
     
     # Start scheduler in background daemon thread
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
