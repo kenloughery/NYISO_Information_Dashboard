@@ -38,35 +38,10 @@ def main():
     logger.info("Starting NYISO Dashboard (Production Mode)")
     logger.info("=" * 80)
     
-    # Ensure data directory exists and is writable
-    data_dir = Path("/app/data")
-    data_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Verify directory is writable
-    try:
-        test_file = data_dir / ".test_write"
-        test_file.write_text("test")
-        test_file.unlink()
-        logger.info(f"Data directory is writable: {data_dir}")
-    except Exception as e:
-        logger.error(f"Data directory is not writable: {e}")
-        raise
-    
-    # Set database path if not already set
-    # For SQLite, we'll use the absolute path directly
-    if not os.getenv('DATABASE_URL'):
-        db_path = data_dir / "nyiso_data.db"
-        # SQLAlchemy SQLite format: sqlite:////absolute/path (4 slashes for absolute)
-        # But we need to ensure the path is properly formatted
-        # Alternative: use sqlite:/// with absolute path (3 slashes also works for absolute)
-        db_path_str = str(db_path.absolute())
-        # Try 3 slashes first - SQLAlchemy handles absolute paths with 3 slashes too
-        os.environ['DATABASE_URL'] = f'sqlite:///{db_path_str}'
-        logger.info(f"Database URL set to: {os.environ['DATABASE_URL']}")
-        logger.info(f"Database file path: {db_path_str}")
-        logger.info(f"Database file exists: {db_path.exists()}")
-        logger.info(f"Database directory exists: {data_dir.exists()}")
-        logger.info(f"Database directory permissions: {oct(data_dir.stat().st_mode)}")
+    # Database URL will be handled by get_database_url() in schema.py
+    # It will try multiple paths and use Railway's DATABASE_URL if set
+    # No need to manually set it here - let the schema module handle it
+    logger.info("Database configuration will be handled by database.schema.get_database_url()")
     
     # Initialize database before starting scheduler to catch any issues early
     # This ensures the database file and schema exist before the scheduler tries to use it
@@ -76,29 +51,19 @@ def main():
         db_url = get_database_url()
         logger.info(f"Database URL: {db_url}")
         
-        # Try to create an empty database file first to ensure we can write
-        db_file = data_dir / "nyiso_data.db"
-        try:
-            # Touch the file to ensure it exists and is writable
-            db_file.touch(exist_ok=True)
-            logger.info(f"Database file created/touched: {db_file}")
-        except Exception as touch_error:
-            logger.error(f"Failed to create database file: {touch_error}")
-            raise
-        
-        # Now initialize the schema
+        # Initialize the schema (get_database_url() handles path selection)
         init_database()
         logger.info("Database schema initialized successfully")
         
-        # Verify database file was created and has content
-        if db_file.exists():
-            file_size = db_file.stat().st_size
-            logger.info(f"Database file exists: {db_file} (size: {file_size} bytes)")
-            if file_size == 0:
-                logger.warning("Database file is empty - schema creation may have failed")
-        else:
-            logger.error(f"Database file not found at: {db_file}")
-            raise FileNotFoundError(f"Database file was not created at {db_file}")
+        # Verify database connection works
+        from database.schema import get_session
+        try:
+            test_session = get_session()
+            test_session.close()
+            logger.info("Database connection verified successfully")
+        except Exception as conn_error:
+            logger.warning(f"Database connection test failed: {conn_error}")
+            # Don't raise - let it continue, might be a temporary issue
         
         # Small delay to ensure database is fully ready
         import time
@@ -140,24 +105,35 @@ def main():
     # Import and run uvicorn
     # Wrap in try-except to catch any import errors
     try:
+        logger.info("Importing FastAPI app...")
         import uvicorn
         from api.main import app
         
         logger.info("FastAPI app imported successfully")
         logger.info("Starting uvicorn server...")
+        logger.info(f"Server will listen on {host}:{port}")
         
+        # Use uvicorn.run with access_log disabled for Railway (reduces noise)
         uvicorn.run(
             app,
             host=host,
             port=port,
-            log_level="info"
+            log_level="info",
+            access_log=False  # Railway handles access logs
         )
     except ImportError as e:
         logger.error(f"Import error: {e}")
         logger.error("Failed to import required modules. Check dependencies.")
+        import traceback
+        logger.error(traceback.format_exc())
         sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+        sys.exit(0)
     except Exception as e:
         logger.exception(f"Fatal error starting server: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         sys.exit(1)
 
 

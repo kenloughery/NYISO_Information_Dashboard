@@ -77,8 +77,10 @@ ENV PYTHONUNBUFFERED=1
 # DATABASE_URL will be set by prod_runner.py to ensure proper directory creation
 
 # Health check (use PORT env var or default to 8000)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import os, requests; port = os.getenv('PORT', '8000'); requests.get(f'http://localhost:{port}/health')" || exit 1
+# Increased start-period to 60s to allow for database initialization
+# Railway will also do its own health checks via the /health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import os, requests; port = os.getenv('PORT', '8000'); r = requests.get(f'http://localhost:{port}/health', timeout=5); exit(0 if r.status_code == 200 else 1)" || exit 1
 
 # Run production entrypoint
 CMD ["python", "prod_runner.py"]

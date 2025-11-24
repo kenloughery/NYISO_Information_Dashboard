@@ -2046,20 +2046,32 @@ async def get_nyiso_zones():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Railway/deployment monitoring."""
+    # Always return 200 - Railway needs this to know the app is running
+    # Even if database fails, the app can still serve static files
     try:
-        db = next(get_db())
-        # Simple query to test database connection
-        db.query(Zone).limit(1).all()
-        return {"status": "healthy", "database": "connected"}
+        from database.schema import get_session
+        db = get_session()
+        try:
+            # Simple query to test database connection
+            db.query(Zone).limit(1).all()
+            db.close()
+            return {"status": "healthy", "database": "connected"}
+        except Exception as db_error:
+            db.close()
+            return {
+                "status": "degraded", 
+                "database": "disconnected",
+                "error": str(db_error),
+                "message": "API is running but database connection failed"
+            }
     except Exception as e:
-        # Return 200 with degraded status instead of 503
-        # This allows Railway to see the app as running even if DB isn't ready
-        # The app can still serve static files and respond to requests
+        # Even if we can't import or create a session, return 200
+        # This ensures Railway sees the app as running
         return {
-            "status": "degraded", 
-            "database": "disconnected",
+            "status": "degraded",
+            "database": "unavailable",
             "error": str(e),
-            "message": "API is running but database connection failed"
+            "message": "API is running but database is unavailable"
         }
 
 
