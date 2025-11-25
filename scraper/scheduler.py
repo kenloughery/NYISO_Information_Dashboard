@@ -84,6 +84,10 @@ class NYISOScheduler:
         # Schedule Open Meteo weather data scraping (hourly)
         schedule.every().hour.do(self._scrape_openmeteo_wrapper)
         logger.info("Scheduled Open Meteo weather data hourly")
+        
+        # Schedule data cleanup (daily at 2 AM)
+        schedule.every().day.at("02:00").do(self._cleanup_wrapper)
+        logger.info("Scheduled data cleanup daily at 02:00 (14-day retention)")
     
     def _has_recent_openmeteo_data(self, hours: int = 2) -> bool:
         """
@@ -214,6 +218,35 @@ class NYISOScheduler:
                 
         except Exception as e:
             logger.exception(f"Error in Open Meteo scrape: {str(e)}")
+    
+    def _cleanup_wrapper(self):
+        """Wrapper for data cleanup - runs daily at 2 AM."""
+        try:
+            logger.info("Running scheduled data cleanup (14-day retention)")
+            from database.cleanup import cleanup_old_data
+            
+            session = get_session()
+            try:
+                results = cleanup_old_data(session, retention_days=14)
+                total_deleted = sum(results.values())
+                
+                if total_deleted > 0:
+                    logger.info(f"Data cleanup completed: {total_deleted} records deleted across {len(results)} tables")
+                    for table, count in results.items():
+                        if count > 0:
+                            logger.info(f"  - {table}: {count} records deleted")
+                else:
+                    logger.info("Data cleanup completed: No old records to delete")
+                
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.exception(f"Error during data cleanup: {str(e)}")
+            finally:
+                session.close()
+                
+        except Exception as e:
+            logger.exception(f"Error in data cleanup wrapper: {str(e)}")
     
     def start(self, run_immediately: bool = True):
         """Start the scheduler."""

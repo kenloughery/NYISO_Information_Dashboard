@@ -101,48 +101,62 @@ export const Section4_LoadForecast = () => {
   const forecastAccuracy = useMemo(() => {
     if (!loadData || !forecastData || loadData.length === 0 || forecastData.length === 0) return null;
     
-    // Get last 24 hours of data
+    // Get last 24 hours of data (use a more lenient window)
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     const accuracyData: number[] = [];
     
-    // Group forecasts by hour
-    const forecastsByHour: { [key: string]: LoadForecast[] } = {};
+    // Group forecasts by hour (using a consistent timezone-agnostic approach)
+    const forecastsByHour: { [key: string]: { forecasts: LoadForecast[], totalForecast: number } } = {};
     forecastData.forEach(f => {
       const forecastDate = new Date(f.timestamp);
-      const hourKey = new Date(forecastDate.getFullYear(), forecastDate.getMonth(), forecastDate.getDate(), forecastDate.getHours()).toISOString();
+      // Create hour key in a timezone-agnostic way
+      const year = forecastDate.getUTCFullYear();
+      const month = forecastDate.getUTCMonth();
+      const day = forecastDate.getUTCDate();
+      const hour = forecastDate.getUTCHours();
+      const hourKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
+      
       if (!forecastsByHour[hourKey]) {
-        forecastsByHour[hourKey] = [];
+        forecastsByHour[hourKey] = { forecasts: [], totalForecast: 0 };
       }
-      forecastsByHour[hourKey].push(f);
+      forecastsByHour[hourKey].forecasts.push(f);
+      forecastsByHour[hourKey].totalForecast += f.forecast_load;
+    });
+    
+    // Group actual loads by hour and zone (to match forecast structure)
+    const actualLoadsByHour: { [key: string]: { loads: number[], totalLoad: number } } = {};
+    loadData.forEach(d => {
+      const loadDate = new Date(d.timestamp);
+      const year = loadDate.getUTCFullYear();
+      const month = loadDate.getUTCMonth();
+      const day = loadDate.getUTCDate();
+      const hour = loadDate.getUTCHours();
+      const hourKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
+      
+      if (!actualLoadsByHour[hourKey]) {
+        actualLoadsByHour[hourKey] = { loads: [], totalLoad: 0 };
+      }
+      actualLoadsByHour[hourKey].loads.push(d.load);
+      actualLoadsByHour[hourKey].totalLoad += d.load;
     });
     
     // For each hour with both actual and forecast, calculate accuracy
-    Object.entries(forecastsByHour).forEach(([hourKey, forecasts]) => {
+    Object.entries(forecastsByHour).forEach(([hourKey, forecastGroup]) => {
       const hourDate = new Date(hourKey);
       if (hourDate < twentyFourHoursAgo) return;
       
-      // Find actual load for this hour (within 5 minutes of the hour)
-      const hourStart = new Date(hourDate);
-      hourStart.setMinutes(0, 0, 0);
-      const hourEnd = new Date(hourStart);
-      hourEnd.setMinutes(59, 59, 999);
+      const actualGroup = actualLoadsByHour[hourKey];
+      if (!actualGroup || actualGroup.loads.length === 0) return;
       
-      const actualLoads = loadData.filter(d => {
-        const loadDate = new Date(d.timestamp);
-        return loadDate >= hourStart && loadDate <= hourEnd;
-      });
+      // Calculate average actual load for the hour (sum across all zones)
+      const avgActual = actualGroup.totalLoad;
       
-      if (actualLoads.length === 0) return;
+      // Sum forecast for this hour (sum across all zones)
+      const totalForecast = forecastGroup.totalForecast;
       
-      // Average actual load for the hour
-      const avgActual = actualLoads.reduce((sum, d) => sum + d.load, 0) / actualLoads.length;
-      
-      // Sum forecast for this hour
-      const totalForecast = forecasts.reduce((sum, f) => sum + f.forecast_load, 0);
-      
-      if (totalForecast > 0) {
+      if (totalForecast > 0 && avgActual > 0) {
         const error = Math.abs(avgActual - totalForecast);
         const errorPercent = (error / totalForecast) * 100;
         const accuracy = 100 - errorPercent;

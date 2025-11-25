@@ -3,7 +3,7 @@
  * Components:
  * 1. Intraday Price Curves (RT vs DA)
  * 2. Rolling 7-Day Price Distribution
- * 3. Real Time - Day Ahead Spread Waterfall
+ * 3. Real Time - Day Ahead Spreads
  */
 
 import { useMemo, useState, Fragment } from 'react';
@@ -21,8 +21,22 @@ export const Section3_PriceEvolution = () => {
   const [selectedZones] = useState<string[]>(['WEST', 'N.Y.C.', 'CENTRL']);
   const [timeRange, setTimeRange] = useState<'24h' | '48h' | '72h'>('24h');
 
-  const { data: rtData } = useRealTimeLBMP();
-  const { data: daData } = useDayAheadLBMP();
+  // Calculate date range based on selected time range
+  // Add buffer to ensure we get enough data (add 1 hour buffer)
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const hours = timeRange === '24h' ? 25 : timeRange === '48h' ? 49 : 73; // Add 1 hour buffer
+    const startDate = subHours(now, hours);
+    return {
+      start_date: startDate.toISOString(),
+      end_date: now.toISOString(),
+      zones: selectedZones.join(','), // Filter by selected zones to reduce data volume
+      limit: 10000, // Increase limit to ensure we get all data for the time range
+    };
+  }, [timeRange, selectedZones]);
+
+  const { data: rtData } = useRealTimeLBMP(dateRange);
+  const { data: daData } = useDayAheadLBMP(dateRange);
   const { data: twData, isLoading: twLoading, error: twError } = useTimeWeightedLBMP();
   const { data: spreadsData } = useRTDASpreads({ limit: 500 });
 
@@ -174,7 +188,7 @@ export const Section3_PriceEvolution = () => {
     return { mean, stdDev, median, min: sorted[0], max: sorted[sorted.length - 1] };
   }, [priceCurvesData, selectedZones]);
 
-  // Prepare Real Time - Day Ahead spread waterfall - Aggregate by timestamp (average across zones)
+  // Prepare Real Time - Day Ahead spreads - Aggregate by timestamp (average across zones)
   const spreadWaterfall = useMemo(() => {
     if (!spreadsData || spreadsData.length === 0) return [];
     
@@ -455,9 +469,9 @@ export const Section3_PriceEvolution = () => {
             )}
           </div>
 
-          {/* 3. Real Time - Day Ahead Spread Waterfall */}
+          {/* 3. Real Time - Day Ahead Spreads */}
           <div>
-            <h3 className="text-base sm:text-lg font-medium mb-3">Real Time - Day Ahead Spread Waterfall</h3>
+            <h3 className="text-base sm:text-lg font-medium mb-3">Real Time - Day Ahead Spreads</h3>
             <ResponsiveChart minHeight={256}>
               <BarChart data={spreadWaterfall}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
