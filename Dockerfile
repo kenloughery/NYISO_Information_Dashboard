@@ -68,6 +68,8 @@ RUN echo "Merging frontend build into static directory..." && \
     test -f ./static/index.html && echo "✓ index.html found" || echo "✗ index.html NOT FOUND" && \
     echo "Checking for assets directory..." && \
     test -d ./static/assets && echo "✓ assets directory found" || echo "✗ assets directory NOT FOUND" && \
+    echo "Checking for vite.svg..." && \
+    test -f ./static/vite.svg && echo "✓ vite.svg found" || echo "✗ vite.svg NOT FOUND" && \
     rm -rf ./frontend_dist_temp
 
 # Create data directory for SQLite database (persistent volume mount point)
