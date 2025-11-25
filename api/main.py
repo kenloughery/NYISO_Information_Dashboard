@@ -2107,10 +2107,46 @@ async def ping():
 
 @app.get("/favicon.ico")
 async def favicon():
-    """Handle favicon requests to prevent 404s."""
-    # Return 204 No Content - browser will use default
+    """Handle favicon requests - serve vite.svg if available."""
+    static_dir = Path(__file__).parent.parent / "static"
+    frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+    
+    # Check for vite.svg in static or frontend/dist
+    vite_svg = static_dir / "vite.svg" if static_dir.exists() else None
+    if not vite_svg or not vite_svg.exists():
+        vite_svg = frontend_dist / "vite.svg" if frontend_dist.exists() else None
+    
+    if vite_svg and vite_svg.exists():
+        return FileResponse(
+            str(vite_svg),
+            media_type="image/svg+xml",
+            headers={"Cache-Control": "public, max-age=31536000"}  # Cache for 1 year
+        )
+    
+    # If no favicon found, return 204 No Content
     from fastapi.responses import Response
     return Response(status_code=204)
+
+
+@app.get("/vite.svg")
+async def vite_svg():
+    """Serve vite.svg icon file."""
+    static_dir = Path(__file__).parent.parent / "static"
+    frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+    
+    # Check for vite.svg in static or frontend/dist
+    vite_svg = static_dir / "vite.svg" if static_dir.exists() else None
+    if not vite_svg or not vite_svg.exists():
+        vite_svg = frontend_dist / "vite.svg" if frontend_dist.exists() else None
+    
+    if vite_svg and vite_svg.exists():
+        return FileResponse(
+            str(vite_svg),
+            media_type="image/svg+xml",
+            headers={"Cache-Control": "public, max-age=31536000"}
+        )
+    
+    raise HTTPException(status_code=404, detail="vite.svg not found")
 
 
 @app.get("/health")
