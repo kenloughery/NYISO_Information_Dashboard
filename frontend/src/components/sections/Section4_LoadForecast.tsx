@@ -112,7 +112,7 @@ export const Section4_LoadForecast = () => {
   const forecastAccuracy = useMemo(() => {
     if (!loadData || !forecastData || loadData.length === 0 || forecastData.length === 0) {
       // Debug: Log data availability
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('[Forecast Accuracy] Data availability:', {
           loadDataCount: loadData?.length || 0,
           forecastDataCount: forecastData?.length || 0,
@@ -130,7 +130,7 @@ export const Section4_LoadForecast = () => {
     const accuracyData: number[] = [];
     
     // Debug: Log data ranges
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       const loadTimestamps = loadData.map(d => new Date(d.timestamp));
       const forecastTimestamps = forecastData.map(f => new Date(f.timestamp));
       const oldestLoad = loadTimestamps.length > 0 ? new Date(Math.min(...loadTimestamps.map(d => d.getTime()))) : null;
@@ -249,7 +249,7 @@ export const Section4_LoadForecast = () => {
     });
     
     // Debug: Log matching results
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('[Forecast Accuracy] Matching results:', {
         forecastHours: Object.keys(forecastsByHour).length,
         actualLoadHours: Object.keys(actualLoadsByHour).length,
@@ -261,7 +261,7 @@ export const Section4_LoadForecast = () => {
     
     if (accuracyData.length === 0) {
       // Debug: Log why no matches found
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('[Forecast Accuracy] No matches found. Details:', {
           forecastHoursInRange: Object.keys(forecastsByHour).filter(key => {
             const hourDate = new Date(key);
@@ -526,7 +526,7 @@ export const Section4_LoadForecast = () => {
               <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-700/50">
                 <div className="text-sm text-slate-400 text-center space-y-2">
                   <div>Insufficient data for accuracy calculation. Need at least 1 hour of matching actual and forecast data.</div>
-                  {process.env.NODE_ENV === 'development' && (
+                  {import.meta.env.DEV && (
                     <div className="text-xs text-slate-500 mt-2 space-y-1">
                       <div>Debug Info:</div>
                       <div>• Load data: {loadData?.length || 0} records</div>
