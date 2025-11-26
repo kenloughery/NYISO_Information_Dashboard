@@ -179,8 +179,9 @@ export const Section4_LoadForecast = () => {
       forecastsByHour[hourKey].totalForecast += f.forecast_load;
     });
     
-    // Group actual loads by hour (actual loads are 5-minute intervals, so aggregate by hour)
-    const actualLoadsByHour: { [key: string]: { loads: number[], totalLoad: number, count: number } } = {};
+    // Group actual loads by hour and zone (actual loads are 5-minute intervals, so average by hour per zone)
+    // Structure: { hourKey: { zone_name: { loads: [], sum: number, count: number } } }
+    const actualLoadsByHourAndZone: { [key: string]: { [zone: string]: { loads: number[], sum: number, count: number } } } = {};
     loadData.forEach(d => {
       const loadDate = new Date(d.timestamp);
       // Only include loads within the last 24 hours
@@ -193,12 +194,34 @@ export const Section4_LoadForecast = () => {
       const hour = loadDate.getUTCHours();
       const hourKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
       
-      if (!actualLoadsByHour[hourKey]) {
-        actualLoadsByHour[hourKey] = { loads: [], totalLoad: 0, count: 0 };
+      if (!actualLoadsByHourAndZone[hourKey]) {
+        actualLoadsByHourAndZone[hourKey] = {};
       }
-      actualLoadsByHour[hourKey].loads.push(d.load);
-      actualLoadsByHour[hourKey].totalLoad += d.load;
-      actualLoadsByHour[hourKey].count += 1;
+      if (!actualLoadsByHourAndZone[hourKey][d.zone_name]) {
+        actualLoadsByHourAndZone[hourKey][d.zone_name] = { loads: [], sum: 0, count: 0 };
+      }
+      actualLoadsByHourAndZone[hourKey][d.zone_name].loads.push(d.load);
+      actualLoadsByHourAndZone[hourKey][d.zone_name].sum += d.load;
+      actualLoadsByHourAndZone[hourKey][d.zone_name].count += 1;
+    });
+    
+    // Convert to hourly totals: average per zone, then sum across zones
+    const actualLoadsByHour: { [key: string]: { totalLoad: number, count: number } } = {};
+    Object.entries(actualLoadsByHourAndZone).forEach(([hourKey, zones]) => {
+      // For each zone, calculate average load for the hour
+      // Then sum those averages across all zones
+      let totalHourlyLoad = 0;
+      let totalZones = 0;
+      Object.values(zones).forEach(zoneData => {
+        if (zoneData.count > 0) {
+          const avgLoadForZone = zoneData.sum / zoneData.count; // Average of 5-min intervals for this zone
+          totalHourlyLoad += avgLoadForZone; // Sum across zones
+          totalZones += 1;
+        }
+      });
+      if (totalZones > 0) {
+        actualLoadsByHour[hourKey] = { totalLoad: totalHourlyLoad, count: totalZones };
+      }
     });
     
     // For each hour with both actual and forecast, calculate accuracy
@@ -234,7 +257,8 @@ export const Section4_LoadForecast = () => {
       
       if (!actualGroup || actualGroup.count === 0) return;
       
-      // Calculate total actual load for the hour (sum across all zones and all 5-min intervals)
+      // Calculate total actual load for the hour
+      // actualGroup.totalLoad is already the sum of hourly averages across all zones
       const totalActual = actualGroup.totalLoad;
       
       // Sum forecast for this hour (sum across all zones)
@@ -244,6 +268,18 @@ export const Section4_LoadForecast = () => {
         const error = Math.abs(totalActual - totalForecast);
         const errorPercent = (error / totalForecast) * 100;
         const accuracy = 100 - errorPercent;
+        
+        // Debug: Log calculation details
+        if (import.meta.env.DEV) {
+          console.log(`[Forecast Accuracy] Hour ${hourKey}:`, {
+            totalActual: totalActual.toFixed(2),
+            totalForecast: totalForecast.toFixed(2),
+            error: error.toFixed(2),
+            errorPercent: errorPercent.toFixed(2),
+            accuracy: accuracy.toFixed(2),
+          });
+        }
+        
         accuracyData.push(Math.max(0, accuracy));
       }
     });

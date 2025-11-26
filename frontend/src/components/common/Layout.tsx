@@ -18,7 +18,18 @@ export const Layout = ({ children }: LayoutProps) => {
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold">New York Power Market (NYISO) Dashboard</h1>
           </div>
                  <div className="flex items-center gap-4">
-                   <span className="text-sm text-slate-500">Built by Ken with Cursor AI</span>
+                   <span className="text-sm text-slate-500">
+                     Built by{' '}
+                     <a 
+                       href="https://www.linkedin.com/in/kenneth-loughery/" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="text-slate-400 hover:text-slate-300 underline"
+                     >
+                       Ken
+                     </a>
+                     {' '}with Cursor AI
+                   </span>
                  </div>
         </div>
       </header>
@@ -27,6 +38,24 @@ export const Layout = ({ children }: LayoutProps) => {
       <main className="w-full">
         {children}
       </main>
+
+      {/* Footer */}
+      <footer className="bg-slate-800 border-t border-slate-700 px-6 py-4 mt-10">
+        <div className="flex items-center justify-center">
+          <span className="text-sm text-slate-500">
+            Built by{' '}
+            <a 
+              href="https://www.linkedin.com/in/kenneth-loughery/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-slate-300 underline"
+            >
+              Ken
+            </a>
+            {' '}with Cursor AI
+          </span>
+        </div>
+      </footer>
     </div>
   );
 };
