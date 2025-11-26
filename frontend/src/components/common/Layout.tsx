@@ -24,7 +24,7 @@ export const Layout = ({ children }: LayoutProps) => {
                        href="https://www.linkedin.com/in/kenneth-loughery/" 
                        target="_blank" 
                        rel="noopener noreferrer"
-                       className="text-slate-400 hover:text-slate-300 underline"
+                       className="text-slate-400 hover:text-slate-300"
                      >
                        Ken
                      </a>
@@ -40,7 +40,7 @@ export const Layout = ({ children }: LayoutProps) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-800 border-t border-slate-700 px-6 py-4 mt-10">
+      <div className="px-6 py-4 mt-10">
         <div className="flex items-center justify-center">
           <span className="text-sm text-slate-500">
             Built by{' '}
@@ -48,14 +48,14 @@ export const Layout = ({ children }: LayoutProps) => {
               href="https://www.linkedin.com/in/kenneth-loughery/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-slate-300 underline"
+              className="text-slate-400 hover:text-slate-300"
             >
               Ken
             </a>
             {' '}with Cursor AI
           </span>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };
