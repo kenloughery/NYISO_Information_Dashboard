@@ -21,8 +21,19 @@ import { formatLabel } from '@/utils/format';
 import { CheckCircle, Warning } from '@mui/icons-material';
 
 export const Section4_LoadForecast = () => {
-  const { data: loadData } = useRealTimeLoad();
-  const { data: forecastData, isLoading: forecastLoading, error: forecastError } = useLoadForecast();
+  // Fetch last 25 hours of data (24h + 1h buffer) for accuracy calculation
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    const startDate = new Date(now.getTime() - 25 * 60 * 60 * 1000); // 25 hours ago
+    return {
+      start_date: startDate.toISOString(),
+      end_date: now.toISOString(),
+      limit: 10000, // Ensure we get all data
+    };
+  }, []);
+
+  const { data: loadData } = useRealTimeLoad(dateRange);
+  const { data: forecastData, isLoading: forecastLoading, error: forecastError } = useLoadForecast(dateRange);
 
   // Actual vs Forecast Gauge
   const loadComparison = useMemo(() => {
@@ -99,24 +110,67 @@ export const Section4_LoadForecast = () => {
   
   // Calculate forecast accuracy metrics (historical)
   const forecastAccuracy = useMemo(() => {
-    if (!loadData || !forecastData || loadData.length === 0 || forecastData.length === 0) return null;
+    if (!loadData || !forecastData || loadData.length === 0 || forecastData.length === 0) {
+      // Debug: Log data availability
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Forecast Accuracy] Data availability:', {
+          loadDataCount: loadData?.length || 0,
+          forecastDataCount: forecastData?.length || 0,
+          loadDataSample: loadData?.slice(0, 3),
+          forecastDataSample: forecastData?.slice(0, 3),
+        });
+      }
+      return null;
+    }
     
-    // Get last 24 hours of data (use a more lenient window)
+    // Get last 24 hours of data
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     const accuracyData: number[] = [];
     
-    // Group forecasts by hour (using a consistent timezone-agnostic approach)
+    // Debug: Log data ranges
+    if (process.env.NODE_ENV === 'development') {
+      const loadTimestamps = loadData.map(d => new Date(d.timestamp));
+      const forecastTimestamps = forecastData.map(f => new Date(f.timestamp));
+      const oldestLoad = loadTimestamps.length > 0 ? new Date(Math.min(...loadTimestamps.map(d => d.getTime()))) : null;
+      const newestLoad = loadTimestamps.length > 0 ? new Date(Math.max(...loadTimestamps.map(d => d.getTime()))) : null;
+      const oldestForecast = forecastTimestamps.length > 0 ? new Date(Math.min(...forecastTimestamps.map(d => d.getTime()))) : null;
+      const newestForecast = forecastTimestamps.length > 0 ? new Date(Math.max(...forecastTimestamps.map(d => d.getTime()))) : null;
+      
+      console.log('[Forecast Accuracy] Data time ranges:', {
+        now: now.toISOString(),
+        twentyFourHoursAgo: twentyFourHoursAgo.toISOString(),
+        loadData: {
+          count: loadData.length,
+          oldest: oldestLoad?.toISOString(),
+          newest: newestLoad?.toISOString(),
+          zones: [...new Set(loadData.map(d => d.zone_name))],
+        },
+        forecastData: {
+          count: forecastData.length,
+          oldest: oldestForecast?.toISOString(),
+          newest: newestForecast?.toISOString(),
+          zones: [...new Set(forecastData.map(f => f.zone_name))],
+        },
+      });
+    }
+    
+    // Group forecasts by hour (forecasts are hourly, so round to hour)
     const forecastsByHour: { [key: string]: { forecasts: LoadForecast[], totalForecast: number } } = {};
     forecastData.forEach(f => {
       const forecastDate = new Date(f.timestamp);
-      // Create hour key in a timezone-agnostic way
+      // Round to hour (forecasts are already hourly, but ensure consistency)
       const year = forecastDate.getUTCFullYear();
       const month = forecastDate.getUTCMonth();
       const day = forecastDate.getUTCDate();
       const hour = forecastDate.getUTCHours();
       const hourKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
+      
+      // Only include forecasts within the last 24 hours AND for hours that have already occurred
+      // (We can't compare future forecasts with past actual loads)
+      const hourDate = new Date(hourKey);
+      if (hourDate < twentyFourHoursAgo || hourDate > now) return;
       
       if (!forecastsByHour[hourKey]) {
         forecastsByHour[hourKey] = { forecasts: [], totalForecast: 0 };
@@ -125,10 +179,14 @@ export const Section4_LoadForecast = () => {
       forecastsByHour[hourKey].totalForecast += f.forecast_load;
     });
     
-    // Group actual loads by hour and zone (to match forecast structure)
-    const actualLoadsByHour: { [key: string]: { loads: number[], totalLoad: number } } = {};
+    // Group actual loads by hour (actual loads are 5-minute intervals, so aggregate by hour)
+    const actualLoadsByHour: { [key: string]: { loads: number[], totalLoad: number, count: number } } = {};
     loadData.forEach(d => {
       const loadDate = new Date(d.timestamp);
+      // Only include loads within the last 24 hours
+      if (loadDate < twentyFourHoursAgo) return;
+      
+      // Round to hour
       const year = loadDate.getUTCFullYear();
       const month = loadDate.getUTCMonth();
       const day = loadDate.getUTCDate();
@@ -136,35 +194,89 @@ export const Section4_LoadForecast = () => {
       const hourKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00Z`;
       
       if (!actualLoadsByHour[hourKey]) {
-        actualLoadsByHour[hourKey] = { loads: [], totalLoad: 0 };
+        actualLoadsByHour[hourKey] = { loads: [], totalLoad: 0, count: 0 };
       }
       actualLoadsByHour[hourKey].loads.push(d.load);
       actualLoadsByHour[hourKey].totalLoad += d.load;
+      actualLoadsByHour[hourKey].count += 1;
     });
     
     // For each hour with both actual and forecast, calculate accuracy
+    // Try exact match first, then try adjacent hours if no match
     Object.entries(forecastsByHour).forEach(([hourKey, forecastGroup]) => {
-      const hourDate = new Date(hourKey);
-      if (hourDate < twentyFourHoursAgo) return;
+      let actualGroup = actualLoadsByHour[hourKey];
       
-      const actualGroup = actualLoadsByHour[hourKey];
-      if (!actualGroup || actualGroup.loads.length === 0) return;
+      // If no exact match, try the hour before or after (within 1 hour window)
+      if (!actualGroup || actualGroup.count === 0) {
+        const hourDate = new Date(hourKey);
+        // Try hour before
+        const hourBefore = new Date(hourDate);
+        hourBefore.setUTCHours(hourBefore.getUTCHours() - 1);
+        const yearBefore = hourBefore.getUTCFullYear();
+        const monthBefore = hourBefore.getUTCMonth();
+        const dayBefore = hourBefore.getUTCDate();
+        const hourBeforeHour = hourBefore.getUTCHours();
+        const hourBeforeKey = `${yearBefore}-${String(monthBefore + 1).padStart(2, '0')}-${String(dayBefore).padStart(2, '0')}T${String(hourBeforeHour).padStart(2, '0')}:00:00Z`;
+        actualGroup = actualLoadsByHour[hourBeforeKey];
+        
+        // Try hour after if still no match
+        if (!actualGroup || actualGroup.count === 0) {
+          const hourAfter = new Date(hourDate);
+          hourAfter.setUTCHours(hourAfter.getUTCHours() + 1);
+          const yearAfter = hourAfter.getUTCFullYear();
+          const monthAfter = hourAfter.getUTCMonth();
+          const dayAfter = hourAfter.getUTCDate();
+          const hourAfterHour = hourAfter.getUTCHours();
+          const hourAfterKey = `${yearAfter}-${String(monthAfter + 1).padStart(2, '0')}-${String(dayAfter).padStart(2, '0')}T${String(hourAfterHour).padStart(2, '0')}:00:00Z`;
+          actualGroup = actualLoadsByHour[hourAfterKey];
+        }
+      }
       
-      // Calculate average actual load for the hour (sum across all zones)
-      const avgActual = actualGroup.totalLoad;
+      if (!actualGroup || actualGroup.count === 0) return;
+      
+      // Calculate total actual load for the hour (sum across all zones and all 5-min intervals)
+      const totalActual = actualGroup.totalLoad;
       
       // Sum forecast for this hour (sum across all zones)
       const totalForecast = forecastGroup.totalForecast;
       
-      if (totalForecast > 0 && avgActual > 0) {
-        const error = Math.abs(avgActual - totalForecast);
+      if (totalForecast > 0 && totalActual > 0) {
+        const error = Math.abs(totalActual - totalForecast);
         const errorPercent = (error / totalForecast) * 100;
         const accuracy = 100 - errorPercent;
         accuracyData.push(Math.max(0, accuracy));
       }
     });
     
-    if (accuracyData.length === 0) return null;
+    // Debug: Log matching results
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Forecast Accuracy] Matching results:', {
+        forecastHours: Object.keys(forecastsByHour).length,
+        actualLoadHours: Object.keys(actualLoadsByHour).length,
+        matchedHours: accuracyData.length,
+        forecastHourKeys: Object.keys(forecastsByHour).slice(0, 5),
+        actualLoadHourKeys: Object.keys(actualLoadsByHour).slice(0, 5),
+      });
+    }
+    
+    if (accuracyData.length === 0) {
+      // Debug: Log why no matches found
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Forecast Accuracy] No matches found. Details:', {
+          forecastHoursInRange: Object.keys(forecastsByHour).filter(key => {
+            const hourDate = new Date(key);
+            return hourDate >= twentyFourHoursAgo && hourDate <= now;
+          }).length,
+          actualLoadHoursInRange: Object.keys(actualLoadsByHour).filter(key => {
+            const hourDate = new Date(key);
+            return hourDate >= twentyFourHoursAgo && hourDate <= now;
+          }).length,
+          sampleForecastHours: Object.keys(forecastsByHour).slice(0, 3),
+          sampleActualLoadHours: Object.keys(actualLoadsByHour).slice(0, 3),
+        });
+      }
+      return null;
+    }
     
     const avgAccuracy = accuracyData.reduce((a, b) => a + b, 0) / accuracyData.length;
     const minAccuracy = Math.min(...accuracyData);
@@ -412,8 +524,21 @@ export const Section4_LoadForecast = () => {
               </div>
             ) : (
               <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-700/50">
-                <div className="text-sm text-slate-400 text-center">
-                  Insufficient data for accuracy calculation. Need at least 1 hour of matching actual and forecast data.
+                <div className="text-sm text-slate-400 text-center space-y-2">
+                  <div>Insufficient data for accuracy calculation. Need at least 1 hour of matching actual and forecast data.</div>
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-slate-500 mt-2 space-y-1">
+                      <div>Debug Info:</div>
+                      <div>• Load data: {loadData?.length || 0} records</div>
+                      <div>• Forecast data: {forecastData?.length || 0} records</div>
+                      {loadData && loadData.length > 0 && (
+                        <div>• Load range: {new Date(loadData[loadData.length - 1]?.timestamp).toLocaleString()} to {new Date(loadData[0]?.timestamp).toLocaleString()}</div>
+                      )}
+                      {forecastData && forecastData.length > 0 && (
+                        <div>• Forecast range: {new Date(forecastData[forecastData.length - 1]?.timestamp).toLocaleString()} to {new Date(forecastData[0]?.timestamp).toLocaleString()}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
