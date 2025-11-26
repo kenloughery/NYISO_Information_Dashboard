@@ -521,36 +521,22 @@ export const Section4_LoadForecast = () => {
 
           {/* 2. Forecast Accuracy Metrics */}
           <div>
-            <h3 className="text-base sm:text-lg font-medium mb-3">Forecast Accuracy (24h)</h3>
+            <h3 className="text-base sm:text-lg font-medium mb-3">Aggregate Load Forecast Accuracy</h3>
             {forecastAccuracy ? (
               <div className="bg-slate-700/30 rounded-lg p-6 border border-slate-700/50">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <div role="img" aria-label={`Average forecast accuracy: ${forecastAccuracy.average.toFixed(1)}%`}>
-                      <CircularGauge
-                        value={forecastAccuracy.average}
-                        max={100}
-                        label="Average Accuracy"
-                        unit="%"
-                        size={120}
-                        strokeWidth={12}
-                        showPercentage={false}
-                        thresholds={{ low: 95, medium: 98, high: 99 }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-600">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                      <div className="text-xs text-slate-500 mb-1">Min</div>
-                      <div className="text-sm font-semibold text-red-400">{forecastAccuracy.min.toFixed(1)}%</div>
+                      <div className="text-xs text-slate-500 mb-1">Min Accuracy</div>
+                      <div className="text-lg font-semibold text-red-400">{forecastAccuracy.min.toFixed(1)}%</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs text-slate-500 mb-1">Average</div>
-                      <div className="text-sm font-semibold text-blue-400">{forecastAccuracy.average.toFixed(1)}%</div>
+                      <div className="text-xs text-slate-500 mb-1">Average Accuracy</div>
+                      <div className="text-xl font-bold text-blue-400">{forecastAccuracy.average.toFixed(1)}%</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs text-slate-500 mb-1">Max</div>
-                      <div className="text-sm font-semibold text-green-400">{forecastAccuracy.max.toFixed(1)}%</div>
+                      <div className="text-xs text-slate-500 mb-1">Max Accuracy</div>
+                      <div className="text-lg font-semibold text-green-400">{forecastAccuracy.max.toFixed(1)}%</div>
                     </div>
                   </div>
                   <div className="text-xs text-slate-500 text-center pt-2 border-t border-slate-600">
