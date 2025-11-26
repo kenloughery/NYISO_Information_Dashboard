@@ -313,13 +313,31 @@ export const Section3_PriceEvolution = () => {
                 <YAxis 
                   stroke="#9ca3af" 
                   tick={{ fill: '#9ca3af', fontSize: 11 }}
-                  label={{ value: 'Price ($/MWh)', angle: -90, position: 'insideLeft', fill: '#9ca3af' }}
+                  label={{ 
+                    value: 'Price ($/MWh)', 
+                    angle: -90, 
+                    position: 'left', 
+                    fill: '#9ca3af',
+                    offset: 10,
+                    style: { textAnchor: 'middle' }
+                  }}
+                  width={60}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(30, 41, 59, 0.85)', 
+                    border: '1px solid rgba(51, 65, 85, 0.6)', 
+                    borderRadius: '8px',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)'
+                  }}
                   labelStyle={{ color: '#e2e8f0', fontWeight: 'bold' }}
                   itemStyle={{ color: '#e2e8f0' }}
                   formatter={(value: number, name: string) => [`$${value.toFixed(2)}`, name]}
+                  wrapperStyle={{ 
+                    maxWidth: '90vw',
+                    zIndex: 1000
+                  }}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '20px' }}

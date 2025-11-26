@@ -15,7 +15,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <header className="bg-slate-800 border-b border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold">New York Power Market (NYISO) Dashboard</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">New York Power Market (NYISO) Dashboard</h1>
           </div>
                  <div className="flex items-center gap-4">
                    <span className="text-sm text-slate-500">
@@ -40,7 +40,7 @@ export const Layout = ({ children }: LayoutProps) => {
       </main>
 
       {/* Footer */}
-      <div className="px-6 py-4 mt-10">
+      <div className="px-6 py-2 mt-4">
         <div className="flex items-center justify-center">
           <span className="text-sm text-slate-500">
             Built by{' '}
