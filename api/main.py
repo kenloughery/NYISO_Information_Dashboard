@@ -2181,6 +2181,49 @@ async def health_check():
         }
 
 
+@app.get("/api/analytics/view-count")
+async def get_view_count():
+    """Get simple total view count - all time and today."""
+    try:
+        from sqlalchemy import func
+        from datetime import datetime, date
+        
+        db = next(get_db())
+        try:
+            # Total page views (all time)
+            total_views = db.query(func.count(PageView.id)).scalar() or 0
+            
+            # Today's page views
+            today_start = datetime.combine(date.today(), datetime.min.time())
+            today_views = db.query(func.count(PageView.id)).filter(
+                PageView.timestamp >= today_start
+            ).scalar() or 0
+            
+            # Unique visitors (all time) - count distinct IP hashes
+            unique_visitors = db.query(func.count(func.distinct(PageView.ip_hash))).scalar() or 0
+            
+            # Unique visitors today
+            unique_visitors_today = db.query(func.count(func.distinct(PageView.ip_hash))).filter(
+                PageView.timestamp >= today_start
+            ).scalar() or 0
+            
+            return {
+                "total_views": total_views,
+                "today_views": today_views,
+                "unique_visitors": unique_visitors,
+                "unique_visitors_today": unique_visitors_today,
+                "last_updated": datetime.utcnow().isoformat()
+            }
+        finally:
+            db.close()
+    except Exception as e:
+        return {
+            "error": str(e),
+            "total_views": 0,
+            "today_views": 0
+        }
+
+
 @app.get("/api/debug/db-stats")
 async def get_db_stats():
     """Debug endpoint to check database status and table counts."""
